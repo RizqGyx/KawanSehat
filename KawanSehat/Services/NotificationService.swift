@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import Combine
 
 // MARK: - NotificationService
 /// Manages all local push notifications: scheduled reminders + smart re-engagement.
