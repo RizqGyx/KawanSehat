@@ -5,6 +5,9 @@ import SwiftUI
 struct NutritionView: View {
     @EnvironmentObject var nutritionVM: NutritionViewModel
     @EnvironmentObject var userProfileVM: UserProfileViewModel
+    @StateObject private var geminiService = GeminiService.shared
+    @State private var showHistorySheet = false
+    @State private var showAPIKeySheet = false
     
     var body: some View {
         NavigationStack {
@@ -26,9 +29,28 @@ struct NutritionView: View {
                                 } label: {
                                     Label("Kembali ke pencarian", systemImage: "arrow.left")
                                         .font(.subheadline)
-                                        .foregroundColor(.green)
+                                        .foregroundColor(.blue)
                                 }
                                 Spacer()
+                                
+                                // AI Suggestion button
+                                Button {
+                                    Task {
+                                        _ = await geminiService.getHealthSuggestion(
+                                            for: selectedFood.name,
+                                            userProfile: userProfileVM.profile
+                                        )
+                                    }
+                                } label: {
+                                    if geminiService.isLoading {
+                                        ProgressView()
+                                            .frame(height: 16)
+                                    } else {
+                                        Label("AI Saran", systemImage: "sparkles")
+                                    }
+                                }
+                                .font(.caption)
+                                .disabled(geminiService.isLoading)
                             }
                             .padding(.horizontal)
                             
@@ -41,9 +63,16 @@ struct NutritionView: View {
                             )
                             .padding(.horizontal)
                             
-                            // Suggestions section
+                            // Gemini suggestion section (if available)
+                            if let latestSuggestion = geminiService.suggestions.first,
+                               latestSuggestion.foodName == selectedFood.name {
+                                GeminiSuggestionCard(suggestion: latestSuggestion)
+                                    .padding(.horizontal)
+                            }
+                            
+                            // Alternative suggestions section
                             if !nutritionVM.suggestions.isEmpty {
-                                SectionHeader(title: "Alternatif Lebih Sehat & Hemat", icon: "sparkles")
+                                AlternativeHeaderSection()
                                 
                                 VStack(spacing: 10) {
                                     ForEach(nutritionVM.suggestions) { suggestion in
@@ -95,15 +124,95 @@ struct NutritionView: View {
                 }
             }
             .navigationTitle("Kalkulator Nutrisi")
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showHistorySheet = true
+                    } label: {
+                        Label("History", systemImage: "deskclocks")
+                    }
+                    
+                    Menu {
+                        Button {
+                            showAPIKeySheet = true
+                        } label: {
+                            Label("Setup API Key", systemImage: "key.fill")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
             .onAppear {
                 // Sync with latest profile (budget may have changed)
                 nutritionVM.updateProfile(userProfileVM.profile)
                 nutritionVM.performSearch()
+                geminiService.loadHistory()
             }
             .onChange(of: nutritionVM.searchQuery) { _, _ in
                 nutritionVM.performSearch()
             }
+            .sheet(isPresented: $showHistorySheet) {
+                GeminiHistorySheet(geminiService: geminiService)
+            }
+            .sheet(isPresented: $showAPIKeySheet) {
+                APIKeySetupSheet(geminiService: geminiService)
+            }
         }
+    }
+}
+
+// MARK: - Alternative Section Header
+struct AlternativeHeaderSection: View {
+    var body: some View {
+        HStack {
+            Label("Alternatif Lebih Sehat & Hemat", systemImage: "sparkles")
+                .font(.subheadline.bold())
+            Spacer()
+        }
+        .padding(.horizontal)
+        .foregroundColor(.blue)
+    }
+}
+
+// MARK: - Gemini Suggestion Card
+struct GeminiSuggestionCard: View {
+    let suggestion: GeminiSuggestion
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("AI Recommendation", systemImage: "sparkles.square.fill")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.purple)
+                Spacer()
+            }
+            
+            Text(suggestion.suggestion)
+                .font(.callout)
+                .foregroundColor(.primary)
+            
+            if !suggestion.alternatives.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Alternatif yang direkomendasikan:")
+                        .font(.caption.bold())
+                        .foregroundColor(.secondary)
+                    
+                    ForEach(suggestion.alternatives, id: \.self) { alt in
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.right")
+                                .font(.caption2)
+                                .foregroundColor(.purple)
+                            Text(alt)
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.purple.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -333,6 +442,134 @@ struct SuggestionCard: View {
             .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.05), radius: 4)
+        }
+    }
+}
+
+// MARK: - Gemini History Sheet
+struct GeminiHistorySheet: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var geminiService: GeminiService
+    
+    var body: some View {
+        NavigationStack {
+            Group {
+                if geminiService.suggestions.isEmpty {
+                    ContentUnavailableView(
+                        "Tidak ada history",
+                        systemImage: "clock.fill",
+                        description: Text("Saran AI akan muncul di sini setelah kamu menggunakan fitur AI Recommendation")
+                    )
+                } else {
+                    List {
+                        ForEach(geminiService.suggestions) { suggestion in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(suggestion.foodName)
+                                            .font(.subheadline.bold())
+                                        Text(suggestion.timestamp, style: .date)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button {
+                                        geminiService.deleteSuggestion(suggestion)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                            .foregroundColor(.red)
+                                    }
+                                }
+                                
+                                Text(suggestion.suggestion)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .listStyle(.plain)
+                }
+            }
+            .navigationTitle("AI Recommendation History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Tutup") { dismiss() }
+                }
+                
+                if !geminiService.suggestions.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Hapus Semua") {
+                            geminiService.clearHistory()
+                        }
+                        .foregroundColor(.red)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - API Key Setup Sheet
+struct APIKeySetupSheet: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var geminiService: GeminiService
+    @State private var apiKey: String = ""
+    @State private var showSuccess = false
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Dapatkan API Key dari Google AI Studio")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Link("https://aistudio.google.com/app/apikey",
+                             destination: URL(string: "https://aistudio.google.com/app/apikey")!)
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                } header: {
+                    Text("Gemini Flash 2.5 API Key")
+                }
+                
+                Section("API Key") {
+                    SecureField("Paste your API key here", text: $apiKey)
+                }
+                
+                Section {
+                    Button {
+                        geminiService.setAPIKey(apiKey)
+                        showSuccess = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            dismiss()
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Simpan API Key")
+                                .bold()
+                            Spacer()
+                        }
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .navigationTitle("Setup API Key")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Batal") { dismiss() }
+                }
+            }
+            .alert("Berhasil!", isPresented: $showSuccess) {
+                Button("OK") { }
+            } message: {
+                Text("API Key berhasil disimpan. Kamu sekarang bisa menggunakan fitur AI Recommendation.")
+            }
         }
     }
 }

@@ -35,7 +35,7 @@ struct MainTabView: View {
                     Label("Pengingat", systemImage: "bell.fill")
                 }
         }
-        .tint(.green)
+        .tint(.blue)
         .onAppear {
             // Sync NutritionVM with current profile
             nutritionVM.updateProfile(userProfileVM.profile)
