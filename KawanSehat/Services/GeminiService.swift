@@ -69,6 +69,40 @@ struct GeminiSuggestion: Identifiable, Codable {
     }
 }
 
+// MARK: - Smart Meal Recommendation
+struct MealRecommendation: Identifiable, Codable {
+    let id: UUID
+    let mealType: MealType
+    let foodName: String
+    let description: String
+    let calorieInfo: String
+    let budgetInfo: String
+    let timestamp: Date
+    
+    enum MealType: String, Codable {
+        case breakfast = "Sarapan"
+        case lunch = "Makan Siang"
+        case dinner = "Makan Malam"
+    }
+    
+    init(
+        mealType: MealType,
+        foodName: String,
+        description: String,
+        calorieInfo: String,
+        budgetInfo: String
+    ) {
+        self.id = UUID()
+        self.mealType = mealType
+        self.foodName = foodName
+        self.description = description
+        self.calorieInfo = calorieInfo
+        self.budgetInfo = budgetInfo
+        self.timestamp = Date()
+    }
+}
+
+
 // MARK: - GeminiService
 @MainActor
 class GeminiService: ObservableObject {
@@ -78,19 +112,29 @@ class GeminiService: ObservableObject {
     @Published var suggestions: [GeminiSuggestion] = []
     @Published var errorMessage: String?
     
-    private let apiKey: String
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    private var currentAPIKeyIndex: Int = 0  // Track which API key we're using
     
     init() {
-        // Get API key from environment or use a placeholder
-        // For production, store this in a secure manner (Keychain, config file, etc.)
-        self.apiKey = UserDefaults.standard.string(forKey: "GEMINI_API_KEY") ?? ""
+        // API keys are now stored in APIConfig.swift
+        currentAPIKeyIndex = 0
     }
     
-    // MARK: - Set API Key
-    func setAPIKey(_ key: String) {
-        let updatedKey = key.trimmingCharacters(in: .whitespaces)
-        UserDefaults.standard.set(updatedKey, forKey: "GEMINI_API_KEY")
+    // MARK: - Get Current Active API Key
+    private var activeAPIKey: String? {
+        if currentAPIKeyIndex < APIConfig.allAPIKeys.count {
+            return APIConfig.allAPIKeys[currentAPIKeyIndex]
+        }
+        return APIConfig.primaryAPIKey
+    }
+    
+    // MARK: - Fallback to Next API Key
+    private func switchToNextAPIKey() {
+        currentAPIKeyIndex += 1
+        if currentAPIKeyIndex >= APIConfig.allAPIKeys.count {
+            currentAPIKeyIndex = 0  // Cycle back to first key
+        }
+        print("🔄 Switched to API key #\(currentAPIKeyIndex + 1)/\(APIConfig.availableKeysCount)")
     }
     
     // MARK: - Get Health Suggestion from Gemini
@@ -98,8 +142,8 @@ class GeminiService: ObservableObject {
         for food: String,
         userProfile: UserProfile
     ) async -> GeminiSuggestion? {
-        guard !apiKey.isEmpty else {
-            errorMessage = "API key tidak diatur. Silakan atur Gemini API key terlebih dahulu."
+        guard !APIConfig.allAPIKeys.isEmpty else {
+            errorMessage = "Tidak ada API key yang tersedia. Silakan set API key di APIConfig.swift"
             return nil
         }
         
@@ -124,84 +168,141 @@ class GeminiService: ObservableObject {
         }
     }
     
-    // MARK: - Call Gemini API
+    // MARK: - Call Gemini API with Retry & Fallback
     private func callGeminiAPI(with prompt: String, foodName: String) async throws -> GeminiSuggestion {
-        let part = GeminiPart(text: prompt)
-        let content = GeminiContent(parts: [part])
-        let config = GenerationConfig(
-            temperature: 0.7,
-            topP: 0.95,
-            topK: 40,
-            // Increase max tokens to reduce chance of response being cut off
-            maxOutputTokens: 1024
-        )
+        var lastError: Error?
+        let maxRetries = APIConfig.availableKeysCount
         
-        let request = GeminiRequest(contents: [content], generationConfig: config)
-        
-        var urlRequest = URLRequest(url: URL(string: "\(baseURL)?key=\(apiKey)")!)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = try JSONEncoder().encode(request)
-        
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
-        
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw NSError(domain: "GeminiAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "API response error"])
+        for attempt in 0..<maxRetries {
+            do {
+                guard let apiKey = activeAPIKey else {
+                    throw NSError(domain: "GeminiAPI", code: -3, userInfo: [NSLocalizedDescriptionKey: "No API key available"])
+                }
+                
+                let part = GeminiPart(text: prompt)
+                let content = GeminiContent(parts: [part])
+                let config = GenerationConfig(
+                    temperature: 0.7,
+                    topP: 0.95,
+                    topK: 40,
+                    maxOutputTokens: 1024
+                )
+                
+                let request = GeminiRequest(contents: [content], generationConfig: config)
+                
+                var urlRequest = URLRequest(url: URL(string: "\(baseURL)?key=\(apiKey)")!)
+                urlRequest.httpMethod = "POST"
+                urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                urlRequest.httpBody = try JSONEncoder().encode(request)
+                
+                // Set timeout to 30 seconds
+                urlRequest.timeoutInterval = 30
+                
+                let (data, response) = try await URLSession.shared.data(for: urlRequest)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw NSError(domain: "GeminiAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+                }
+                
+                // Check status code
+                switch httpResponse.statusCode {
+                case 200:
+                    // Success
+                    break
+                case 400, 401, 403:
+                    // Invalid API key - try next one
+                    print("❌ API key invalid (HTTP \(httpResponse.statusCode)). Trying next key...")
+                    switchToNextAPIKey()
+                    lastError = NSError(domain: "GeminiAPI", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid API key"])
+                    if attempt < maxRetries - 1 {
+                        continue
+                    } else {
+                        throw lastError!
+                    }
+                case 429:
+                    // Rate limited - try next key
+                    print("⚠️ Rate limited (HTTP 429). Trying next key...")
+                    switchToNextAPIKey()
+                    lastError = NSError(domain: "GeminiAPI", code: 429, userInfo: [NSLocalizedDescriptionKey: "Rate limited"])
+                    if attempt < maxRetries - 1 {
+                        continue
+                    } else {
+                        throw lastError!
+                    }
+                case 500...599:
+                    // Server error - try next key
+                    print("⚠️ Server error (HTTP \(httpResponse.statusCode)). Trying next key...")
+                    switchToNextAPIKey()
+                    lastError = NSError(domain: "GeminiAPI", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server error"])
+                    if attempt < maxRetries - 1 {
+                        continue
+                    } else {
+                        throw lastError!
+                    }
+                default:
+                    throw NSError(domain: "GeminiAPI", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Unexpected HTTP response"])
+                }
+                
+                let decodedResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
+                
+                guard let candidate = decodedResponse.candidates?.first,
+                      let content = candidate.content,
+                      let textPart = content.parts.first else {
+                    throw NSError(domain: "GeminiAPI", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])
+                }
+                
+                let responseText = textPart.text
+                
+                #if DEBUG
+                print("--- Gemini API request prompt ---")
+                print(prompt)
+                print("--- Gemini API response ---")
+                print(responseText)
+                #endif
+                
+                let (suggestion, alternatives) = parseGeminiResponse(responseText)
+                
+                return GeminiSuggestion(
+                    foodName: foodName,
+                    suggestion: suggestion,
+                    alternatives: alternatives
+                )
+                
+            } catch {
+                lastError = error
+                print("❌ Attempt \(attempt + 1)/\(maxRetries) failed: \(error.localizedDescription)")
+                
+                if attempt < maxRetries - 1 {
+                    switchToNextAPIKey()
+                } else {
+                    throw error
+                }
+            }
         }
         
-        let decodedResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
-        
-        guard let candidate = decodedResponse.candidates?.first,
-              let content = candidate.content,
-              let textPart = content.parts.first else {
-            throw NSError(domain: "GeminiAPI", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])
-        }
-        
-        let responseText = textPart.text
-
-        // Debug: Log request/response so we can inspect why output might be cut off
-        #if DEBUG
-        print("--- Gemini API request prompt ---")
-        print(prompt)
-        print("--- Gemini API response ---")
-        print(responseText)
-        #endif
-
-        let (suggestion, alternatives) = parseGeminiResponse(responseText)
-        
-        return GeminiSuggestion(
-            foodName: foodName,
-            suggestion: suggestion,
-            alternatives: alternatives
-        )
+        throw lastError ?? NSError(domain: "GeminiAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "All API keys failed"])
     }
     
     // MARK: - Build Prompt
     private func buildPrompt(for food: String, userProfile: UserProfile) -> String {
         return """
-        Kamu adalah ahli gizi profesional yang memberikan saran kesehatan dalam bahasa Indonesia.
+        Ahli gizi yang memberikan saran dalam bahasa Indonesia.
         
         Data pengguna:
         - Nama: \(userProfile.name)
-        - BMI: \(String(format: "%.1f", userProfile.bmi)) (\(userProfile.bmiCategory))
-        - Kebutuhan kalori harian: \(String(format: "%.0f", userProfile.tdee)) kcal
-        - Budget makanan harian: Rp \(Int(userProfile.dailyBudgetIDR)):,-
-        - Level aktivitas: \(userProfile.activityLevel.description)
+        - BMI: \(String(format: "%.1f", userProfile.bmi))
+        - Kalori/hari: \(String(format: "%.0f", userProfile.tdee)) kcal
+        - Budget/hari: Rp \(Int(userProfile.dailyBudgetIDR))
         
-        Makanan yang dipilih: \(food)
+        Makanan: \(food)
         
-        Berikan jawaban yang lengkap dan jangan terpotong.
+        Berikan saran kesehatan singkat (1-2 kalimat) dan 2-3 alternatif lebih sehat.
         
-        Berikan:
-        1. Saran kesehatan singkat (1-2 kalimat) tentang makanan ini dalam konteks kebutuhan pengguna
-        2. 2-3 alternatif makanan yang lebih sehat dan terjangkau
-        
-        Format respons (gunakan ---):
-        Saran: [saran kesehatan]
+        Format:
+        Saran: [saran]
         Alternatif:
         - [alternatif 1]
         - [alternatif 2]
-        - [alternatif 3]
         """
     }
     
@@ -252,5 +353,234 @@ class GeminiService: ObservableObject {
     func deleteSuggestion(_ suggestion: GeminiSuggestion) {
         suggestions.removeAll { $0.id == suggestion.id }
         UserDefaultsService.shared.saveSuggestionHistory(suggestions)
+    }
+    
+    // MARK: - Generate Smart Meal Recommendation
+    /// Generate personalized meal recommendation for specific meal time
+    func generateMealRecommendation(
+        mealType: MealRecommendation.MealType,
+        userProfile: UserProfile
+    ) async -> MealRecommendation? {
+        guard !APIConfig.allAPIKeys.isEmpty else {
+            errorMessage = "Tidak ada API key yang tersedia. Silakan set API key di APIConfig.swift"
+            return nil
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        let prompt = buildMealPrompt(for: mealType, userProfile: userProfile)
+        
+        do {
+            let recommendation = try await callGeminiMealAPI(
+                with: prompt,
+                mealType: mealType,
+                userProfile: userProfile
+            )
+            isLoading = false
+            return recommendation
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
+            return nil
+        }
+    }
+    
+    // MARK: - Call Gemini API for Meal Recommendation with Retry & Fallback
+    private func callGeminiMealAPI(
+        with prompt: String,
+        mealType: MealRecommendation.MealType,
+        userProfile: UserProfile
+    ) async throws -> MealRecommendation {
+        var lastError: Error?
+        let maxRetries = APIConfig.availableKeysCount
+        
+        for attempt in 0..<maxRetries {
+            do {
+                guard let apiKey = activeAPIKey else {
+                    throw NSError(domain: "GeminiAPI", code: -3, userInfo: [NSLocalizedDescriptionKey: "No API key available"])
+                }
+                
+                let part = GeminiPart(text: prompt)
+                let content = GeminiContent(parts: [part])
+                let config = GenerationConfig(
+                    temperature: 0.8,
+                    topP: 0.95,
+                    topK: 40,
+                    maxOutputTokens: 1024
+                )
+                
+                let request = GeminiRequest(contents: [content], generationConfig: config)
+                
+                var urlRequest = URLRequest(url: URL(string: "\(baseURL)?key=\(apiKey)")!)
+                urlRequest.httpMethod = "POST"
+                urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                urlRequest.httpBody = try JSONEncoder().encode(request)
+                urlRequest.timeoutInterval = 30
+                
+                let (data, response) = try await URLSession.shared.data(for: urlRequest)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw NSError(domain: "GeminiAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+                }
+                
+                // Handle different HTTP status codes
+                switch httpResponse.statusCode {
+                case 200:
+                    break
+                case 400, 401, 403:
+                    print("❌ API key invalid (HTTP \(httpResponse.statusCode)). Trying next key...")
+                    switchToNextAPIKey()
+                    lastError = NSError(domain: "GeminiAPI", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid API key"])
+                    if attempt < maxRetries - 1 {
+                        continue
+                    } else {
+                        throw lastError!
+                    }
+                case 429:
+                    print("⚠️ Rate limited (HTTP 429). Trying next key...")
+                    switchToNextAPIKey()
+                    lastError = NSError(domain: "GeminiAPI", code: 429, userInfo: [NSLocalizedDescriptionKey: "Rate limited"])
+                    if attempt < maxRetries - 1 {
+                        continue
+                    } else {
+                        throw lastError!
+                    }
+                case 500...599:
+                    print("⚠️ Server error (HTTP \(httpResponse.statusCode)). Trying next key...")
+                    switchToNextAPIKey()
+                    lastError = NSError(domain: "GeminiAPI", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Server error"])
+                    if attempt < maxRetries - 1 {
+                        continue
+                    } else {
+                        throw lastError!
+                    }
+                default:
+                    throw NSError(domain: "GeminiAPI", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Unexpected HTTP response"])
+                }
+                
+                let decodedResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
+                
+                guard let candidate = decodedResponse.candidates?.first,
+                      let content = candidate.content,
+                      let textPart = content.parts.first else {
+                    throw NSError(domain: "GeminiAPI", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])
+                }
+                
+                let responseText = textPart.text
+                
+                #if DEBUG
+                print("--- Gemini Meal Recommendation Request ---")
+                print(prompt)
+                print("--- Gemini Meal Recommendation Response ---")
+                print(responseText)
+                #endif
+                
+                let (foodName, description, calories, budget) = parseMealRecommendationResponse(responseText)
+                
+                return MealRecommendation(
+                    mealType: mealType,
+                    foodName: foodName,
+                    description: description,
+                    calorieInfo: calories,
+                    budgetInfo: budget
+                )
+                
+            } catch {
+                lastError = error
+                print("❌ Meal API Attempt \(attempt + 1)/\(maxRetries) failed: \(error.localizedDescription)")
+                
+                if attempt < maxRetries - 1 {
+                    switchToNextAPIKey()
+                } else {
+                    throw error
+                }
+            }
+        }
+        
+        throw lastError ?? NSError(domain: "GeminiAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "All API keys failed"])
+    }
+    
+    // MARK: - Build Meal Recommendation Prompt
+    private func buildMealPrompt(
+        for mealType: MealRecommendation.MealType,
+        userProfile: UserProfile
+    ) -> String {
+        let mealName: String
+        switch mealType {
+        case .breakfast: mealName = "sarapan"
+        case .lunch: mealName = "makan siang"
+        case .dinner: mealName = "makan malam"
+        }
+        
+        return """
+        Rekomendasi \(mealName) untuk pengguna dengan kalori ~\(String(format: "%.0f", userProfile.caloriesPerMealIntake)) kcal dan budget \(userProfile.budgetPerMealFormatted).
+        
+        OUTPUT HANYA format di bawah tanpa teks tambahan, sapa, atau keterangan lain:
+        Makanan: [nama makanan]
+        Deskripsi: [alasan singkat 2 kalimat]
+        Kalori: [~XXX kcal]
+        Budget: Rp [XXX.000]
+        """
+    }
+    
+    // MARK: - Parse Meal Recommendation Response
+    private func parseMealRecommendationResponse(
+        _ response: String
+    ) -> (foodName: String, description: String, calories: String, budget: String) {
+        var foodName = ""
+        var description = ""
+        var calories = ""
+        var budget = ""
+        
+        let lines = response.components(separatedBy: .newlines)
+        
+        // Parse format fields - extract after the colon
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            
+            // Skip empty lines and non-format lines
+            if trimmed.isEmpty || (!trimmed.contains(":")) {
+                continue
+            }
+            
+            if trimmed.starts(with: "Makanan:") {
+                let value = trimmed.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
+                if !value.isEmpty && foodName.isEmpty {
+                    foodName = value
+                }
+            } else if trimmed.starts(with: "Deskripsi:") {
+                let value = trimmed.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
+                if !value.isEmpty && description.isEmpty {
+                    description = value
+                }
+            } else if trimmed.starts(with: "Kalori:") {
+                let value = trimmed.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
+                if !value.isEmpty && calories.isEmpty {
+                    calories = value
+                }
+            } else if trimmed.starts(with: "Budget:") {
+                let value = trimmed.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
+                if !value.isEmpty && budget.isEmpty {
+                    budget = value
+                }
+            }
+        }
+        
+        // Provide sensible defaults if parsing incomplete
+        if foodName.isEmpty {
+            foodName = "Rekomendasi Makanan"
+        }
+        if description.isEmpty {
+            description = "Pilihan yang sehat dan terjangkau"
+        }
+        if calories.isEmpty {
+            calories = "~400-500 kcal"
+        }
+        if budget.isEmpty {
+            budget = "Rp 15.000 - 25.000"
+        }
+        
+        return (foodName, description, calories, budget)
     }
 }
