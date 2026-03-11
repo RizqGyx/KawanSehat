@@ -5,6 +5,13 @@ import SwiftUI
 struct ProfileEditView: View {
     @EnvironmentObject var vm: UserProfileViewModel
     @Environment(\.dismiss) var dismiss
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case weight
+        case height
+        case budget
+    }
     
     // Local state for editing
     @State private var weight: String = ""
@@ -23,6 +30,7 @@ struct ProfileEditView: View {
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.decimalPad)
                             .frame(width: 80)
+                            .focused($focusedField, equals: .weight)
                         Text("kg")
                             .foregroundStyle(.secondary)
                     }
@@ -34,6 +42,7 @@ struct ProfileEditView: View {
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.decimalPad)
                             .frame(width: 80)
+                            .focused($focusedField, equals: .height)
                         Text("cm")
                             .foregroundStyle(.secondary)
                     }
@@ -51,6 +60,7 @@ struct ProfileEditView: View {
                             .foregroundStyle(.secondary)
                         TextField("50000", text: $budget)
                             .keyboardType(.numberPad)
+                            .focused($focusedField, equals: .budget)
                     }
                 }
                 
@@ -76,10 +86,19 @@ struct ProfileEditView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Simpan") {
+                        focusedField = nil
                         saveChanges()
                         dismiss()
                     }
                     .bold()
+                }
+                
+                // Keyboard toolbar with Done button
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil
+                    }
                 }
             }
             .onAppear {

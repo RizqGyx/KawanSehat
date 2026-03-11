@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import UserNotifications
 import Combine
 
@@ -54,12 +55,18 @@ class NotificationService: ObservableObject {
             return
         }
         
+        // Ensure user has granted permission before scheduling
+        guard isAuthorized else {
+            print("⚠️ Notification not authorized - cannot schedule reminder for \(reminder.goalType.rawValue)")
+            return
+        }
+        
         // Create notification content
         let content = UNMutableNotificationContent()
-        content.title = "HealthBudget"
+        content.title = "KawanSehat"
         content.body = reminder.goalType.defaultMessage
         content.sound = .default
-        content.badge = 1
+        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
         
         // Schedule for each selected day of week
         for day in reminder.daysOfWeek {
@@ -69,11 +76,15 @@ class NotificationService: ObservableObject {
             dateComponents.weekday = day  // 1=Sunday, 7=Saturday
             
             let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-            let identifier = "\(reminder.goalType.notificationPrefix)_day\(day)"
+            let identifier = "\(reminder.goalType.notificationPrefix)_day\(day)_\(UUID().uuidString)"
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
             
             center.add(request) { error in
-                if let error { print("Schedule error: \(error)") }
+                if let error {
+                    print("❌ Schedule error for \(reminder.goalType.rawValue): \(error.localizedDescription)")
+                } else {
+                    print("✅ Successfully scheduled notification: \(identifier)")
+                }
             }
         }
     }
@@ -91,17 +102,27 @@ class NotificationService: ObservableObject {
     // MARK: - Smart Re-engagement Reminder
     /// Schedules a one-time notification if user hasn't opened the app for X hours
     func scheduleSmartReminderIfNeeded() {
+        // Ensure we have permission
+        guard isAuthorized else {
+            print("⚠️ Notification not authorized - cannot schedule smart reminder")
+            return
+        }
+        
         let config = storage.loadSmartConfig()
         guard config.isEnabled else { return }
         
         let thresholdSeconds = Double(config.inactiveHoursThreshold) * 3600
         
         let content = UNMutableNotificationContent()
-        content.title = "HealthBudget 💚"
+        content.title = "KawanSehat 💚"
         content.body = motivationalMessages.randomElement()?.replacingOccurrences(
             of: "\(0)", with: "\(config.inactiveHoursThreshold)"
-        ) ?? "Yuk kembali ke HealthBudget!"
+        ) ?? "Yuk kembali ke KawanSehat!"
         content.sound = .default
+        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+        
+        // Cancel previous smart reminder before adding a new one
+        center.removePendingNotificationRequests(withIdentifiers: ["smart_reminder_reengagement"])
         
         // Fire after threshold hours from now
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: thresholdSeconds, repeats: false)
@@ -112,7 +133,11 @@ class NotificationService: ObservableObject {
         )
         
         center.add(request) { error in
-            if let error { print("Smart reminder error: \(error)") }
+            if let error {
+                print("❌ Smart reminder error: \(error.localizedDescription)")
+            } else {
+                print("✅ Smart reminder scheduled to trigger in \(config.inactiveHoursThreshold) hours")
+            }
         }
     }
     

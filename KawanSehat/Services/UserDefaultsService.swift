@@ -14,6 +14,7 @@ class UserDefaultsService {
         static let reminders = "health_reminders_v1"
         static let smartReminderConfig = "smart_reminder_config_v1"
         static let lastAppOpenDate = "last_app_open_date"
+        static let suggestionHistory = "gemini_suggestion_history_v1"
     }
     
     // MARK: - UserProfile
@@ -72,5 +73,20 @@ class UserDefaultsService {
         }
         let elapsed = Date().timeIntervalSince(lastOpen)
         return Int(elapsed / 3600)
+    }
+    
+    // MARK: - Gemini Suggestion History
+    func saveSuggestionHistory(_ suggestions: [GeminiSuggestion]) {
+        if let data = try? JSONEncoder().encode(suggestions) {
+            defaults.set(data, forKey: Keys.suggestionHistory)
+        }
+    }
+    
+    func loadSuggestionHistory() -> [GeminiSuggestion] {
+        guard let data = defaults.data(forKey: Keys.suggestionHistory),
+              let suggestions = try? JSONDecoder().decode([GeminiSuggestion].self, from: data) else {
+            return []
+        }
+        return suggestions
     }
 }
