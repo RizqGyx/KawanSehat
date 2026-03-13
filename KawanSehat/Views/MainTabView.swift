@@ -12,6 +12,8 @@ struct MainTabView: View {
     @StateObject private var waterVM: WaterViewModel
     @StateObject private var budgetVM: BudgetViewModel
     @StateObject private var questVM: QuestViewModel
+    @StateObject private var sleepVM: SleepViewModel
+    @StateObject private var workoutVM: WorkoutViewModel
     
     init() {
         // We can't access @EnvironmentObject in init, so we use a placeholder profile.
@@ -21,6 +23,8 @@ struct MainTabView: View {
         _waterVM = StateObject(wrappedValue: WaterViewModel(userProfile: UserProfile()))
         _budgetVM = StateObject(wrappedValue: BudgetViewModel(userProfile: UserProfile()))
         _questVM = StateObject(wrappedValue: QuestViewModel())
+        _sleepVM = StateObject(wrappedValue: SleepViewModel())
+        _workoutVM = StateObject(wrappedValue: WorkoutViewModel())
     }
     
     var body: some View {
@@ -29,6 +33,9 @@ struct MainTabView: View {
                 .environmentObject(nutritionVM)
                 .environmentObject(budgetVM)
                 .environmentObject(questVM)
+                .environmentObject(waterVM)
+                .environmentObject(sleepVM)
+                .environmentObject(workoutVM)
                 .tabItem {
                     Label("Beranda", systemImage: "house.fill")
                 }
@@ -48,16 +55,20 @@ struct MainTabView: View {
                 }
             
             SleepView()
+                .environmentObject(sleepVM)
                 .tabItem {
                     Label("Tidur", systemImage: "moon.stars.fill")
                 }
             
             WorkoutView()
+                .environmentObject(workoutVM)
                 .tabItem {
                     Label("Olahraga", systemImage: "dumbbell.fill")
                 }
             
             BudgetView()
+                .environmentObject(budgetVM)
+                .environmentObject(userProfileVM)
                 .environmentObject(budgetVM)
                 .environmentObject(userProfileVM)
                 .tabItem {

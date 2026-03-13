@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Sleep View
 struct SleepView: View {
-    @StateObject private var sleepVM = SleepViewModel()
+    @EnvironmentObject var sleepVM: SleepViewModel
     @State private var showAddSleepSheet = false
     
     var body: some View {

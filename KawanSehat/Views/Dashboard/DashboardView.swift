@@ -503,7 +503,7 @@ struct MacroMiniCard: View {
 // MARK: - Water Intake Widget
 struct WaterIntakeWidget: View {
     let waterGoal: Double
-    @StateObject private var waterVM = WaterViewModel(userProfile: UserProfile())
+    @EnvironmentObject var waterVM: WaterViewModel
     
     var waterConsumed: Double {
         waterVM.todayTotal / 1000.0  // Convert from ml to liters
@@ -553,9 +553,6 @@ struct WaterIntakeWidget: View {
         .background(Color.blue.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
-        .onAppear {
-            waterVM.updateProfile(UserProfile())
-        }
     }
 }
 
@@ -564,8 +561,8 @@ struct HealthScoreWidget: View {
     @EnvironmentObject var userProfileVM: UserProfileViewModel
     @EnvironmentObject var nutritionVM: NutritionViewModel
     @EnvironmentObject var budgetVM: BudgetViewModel
-    @StateObject private var sleepVM = SleepViewModel()
-    @StateObject private var workoutVM = WorkoutViewModel()
+    @EnvironmentObject var sleepVM: SleepViewModel
+    @EnvironmentObject var workoutVM: WorkoutViewModel
     
     private let healthScoreService = HealthScoreService.shared
     
@@ -692,7 +689,7 @@ struct HealthScoreWidget: View {
 
 // MARK: - Sleep Tracker Widget
 struct SleepTrackerWidget: View {
-    @StateObject private var sleepVM = SleepViewModel()
+    @EnvironmentObject var sleepVM: SleepViewModel
     
     var lastNightSleep: Double {
         sleepVM.last7DaysSleep.first?.durationHours ?? 0
@@ -746,7 +743,7 @@ struct SleepTrackerWidget: View {
 
 // MARK: - Workout Summary Widget
 struct WorkoutSummaryWidget: View {
-    @StateObject private var workoutVM = WorkoutViewModel()
+    @EnvironmentObject var workoutVM: WorkoutViewModel
     
     var body: some View {
         VStack(spacing: 12) {

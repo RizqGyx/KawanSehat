@@ -56,7 +56,7 @@ struct SplashScreenView: View {
                 // Bottom section with tagline and progress
                 VStack(spacing: 20) {
                     VStack(spacing: 10) {
-                        Text("💚 Jaga Kesehatanmu dengan Cerdas")
+                        Text("Jaga Kesehatanmu dengan Cerdas")
                             .font(.system(size: 14, weight: .semibold, design: .default))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)

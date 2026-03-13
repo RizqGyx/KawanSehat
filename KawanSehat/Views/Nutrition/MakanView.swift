@@ -56,13 +56,13 @@ struct MakanView: View {
                                 .font(.subheadline.bold())
                                 .foregroundColor(.green)
                             Spacer()
-                            Text("\(nutritionVM.todayFoodSpentFormatted)/Rp\(Int(userProfileVM.profile.monthlyBudgetIDR))")
+                            Text("\(nutritionVM.todayFoodSpentFormatted)/Rp\(Int(userProfileVM.profile.dailyBudgetIDR))")
                                 .font(.subheadline.bold())
                                 .foregroundColor(.green)
                         }
                         
                         // Progress bar for food budget
-                        let budgetUsage = userProfileVM.profile.monthlyBudgetIDR > 0 ? 
+                        let budgetUsage = userProfileVM.profile.dailyBudgetIDR > 0 ? 
                             nutritionVM.todayTotalFoodSpent / userProfileVM.profile.monthlyBudgetIDR : 0
                         ProgressView(value: min(budgetUsage, 1.0))
                             .tint(budgetUsage > 0.8 ? .red : budgetUsage > 0.5 ? .orange : .green)

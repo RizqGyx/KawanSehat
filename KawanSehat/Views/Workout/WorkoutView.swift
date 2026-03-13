@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Workout View
 struct WorkoutView: View {
-    @StateObject private var workoutVM = WorkoutViewModel()
+    @EnvironmentObject var workoutVM: WorkoutViewModel
     @State private var showAddWorkoutSheet = false
     
     var body: some View {
