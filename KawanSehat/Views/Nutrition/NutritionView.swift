@@ -496,3 +496,10 @@ struct GeminiHistorySheet: View {
         }
     }
 }
+
+// MARK: - Preview
+#Preview {
+    NutritionView()
+        .environmentObject(NutritionViewModel(userProfile: UserProfile()))
+        .environmentObject(UserProfileViewModel())
+}

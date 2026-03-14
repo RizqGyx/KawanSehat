@@ -514,7 +514,7 @@ class GeminiService: ObservableObject {
         }
         
         return """
-        Rekomendasi \(mealName) untuk pengguna dengan kalori ~\(String(format: "%.0f", userProfile.caloriesPerMealIntake)) kcal dan budget \(userProfile.budgetPerMealFormatted).
+        Rekomendasi \(mealName) untuk pengguna dengan kebutuhan kalori harian ~\(String(format: "%.0f", userProfile.caloriesPerMealIntake)) kcal dan budget \(userProfile.budgetPerMealFormatted).
         
         OUTPUT HANYA format di bawah tanpa teks tambahan, sapa, atau keterangan lain:
         Makanan: [nama makanan]

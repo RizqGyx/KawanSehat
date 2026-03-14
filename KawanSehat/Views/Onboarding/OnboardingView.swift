@@ -1,28 +1,5 @@
 import SwiftUI
 
-// MARK: - Color Extension
-extension Color {
-    static let appBackground = Color(red: 0.984, green: 0.98, blue: 0.96)
-    static let fieldBackground = Color(red: 0.941, green: 0.957, blue: 0.937)
-    static let fieldBorder = Color(red: 0.847, green: 0.91, blue: 0.831)
-    static let fieldError = Color(red: 1.0, green: 0.92, blue: 0.92)
-    static let fieldBorderError = Color(red: 0.9, green: 0.3, blue: 0.3)
-
-    static let textDark = Color(red: 0.102, green: 0.169, blue: 0.114)
-    static let textPrimary = Color(red: 0.176, green: 0.235, blue: 0.188)
-    static let textMid = Color(red: 0.29, green: 0.376, blue: 0.314)
-    static let textMuted = Color(red: 0.478, green: 0.58, blue: 0.502)
-
-    static let brandGreenPale = Color(red: 0.929, green: 0.965, blue: 0.902)
-    static let brandGreenLight = Color(red: 0.839, green: 0.941, blue: 0.769)
-    static let brandGreenPrimary = Color(red: 0.714, green: 0.882, blue: 0.612)
-    static let brandGreenDark = Color(red: 0.49, green: 0.776, blue: 0.388)
-    static let brandGreenButton = Color(red: 0.306, green: 0.6, blue: 0.22)
-
-    static let onBoardingTitle = Color(red: 0.39, green: 0.78, blue: 0.34)
-    static let onBoardingPrimary = Color(red: 0.157, green: 0.231, blue: 0.173)
-}
-
 // MARK: - Validation Helpers
 struct FieldError {
     var name: String? = nil
@@ -126,19 +103,22 @@ struct OnboardingHeaderView: View {
             .padding(.horizontal, 20)
             .padding(.top, 12)
 
-            HStack(spacing: 6) {
-                ForEach(0..<3, id: \.self) { index in
-                    Capsule()
-                        .fill(index <= currentStep
-                              ? Color.brandGreenButton
-                              : Color.brandGreenButton.opacity(0.5))
-                        .frame(height: 4)
+            if currentStep < 3 {
+                HStack(spacing: 6) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Capsule()
+                            .fill(index <= currentStep
+                                  ? Color.onBoardingTitle
+                                  : Color.onBoardingPrimary)
+                            .frame(width: index <= currentStep ? 100 : 50)
+                            .frame(height: 5)
+                    }
                 }
+                .padding(.horizontal, 20)
+                .animation(.spring(), value: currentStep)
             }
-            .padding(.horizontal, 20)
-            .animation(.spring(), value: currentStep)
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, 50)
     }
 }
 
@@ -152,19 +132,19 @@ struct OnboardingStep1View: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 25) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Halo.")
-                            .font(.system(size: 55, weight: .bold))
+                            .font(.custom("Urbanist-Bold", size: 55))
                             .foregroundStyle(Color.onBoardingTitle)
                         Text("Kenalan dulu yuk!")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.custom("Urbanist-Bold", size: 32))
                             .foregroundStyle(Color.onBoardingPrimary)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: 25) {
                         // Nama
                         ValidatedField(errorMessage: errors.name) {
                             InlineTextField(
@@ -219,7 +199,7 @@ struct OnboardingStep1View: View {
                 .padding(.bottom, 16)
             }
 
-            OnboardingPrimaryButton(title: "Lanjut →") {
+            OnboardingPrimaryButton(title: "Lanjut") {
                 didAttempt = true
                 errors = validateStep1(
                     name: vm.formName,
@@ -269,7 +249,7 @@ struct ValidatedField<Content: View>: View {
             content()
             if let msg = errorMessage {
                 Text(msg)
-                    .font(.system(size: 11, weight: .regular))
+                    .font(.custom("Urbanist-Regular", size: 12))
                     .foregroundStyle(Color(red: 0.85, green: 0.2, blue: 0.2))
                     .padding(.horizontal, 4)
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -290,13 +270,14 @@ struct InlineTextField: View {
     var body: some View {
         HStack {
             TextField(placeholder, text: $text)
-                .font(.system(size: 15, weight: .regular))
+                .font(.custom("Urbanist-SemiBold", size: 16))
+                .foregroundStyle(Color.onBoardingPrimary)
                 .keyboardType(keyboardType)
                 .foregroundStyle(Color(red: 0.4, green: 0.4, blue: 0.4))
 
             if let label = trailingLabel {
                 Text(label)
-                    .font(.system(size: 14, weight: .regular))
+                    .font(.custom("Urbanist-Regular", size: 14))
                     .foregroundStyle(Color(red: 0.65, green: 0.65, blue: 0.65))
             }
         }
@@ -377,8 +358,8 @@ struct OnboardingStep2View: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Seberapa sering kamu\nolahraga?")
-                .font(.system(size: 26, weight: .bold))
-                .foregroundStyle(Color(red: 0.078, green: 0.173, blue: 0.110))
+                .font(.custom("Urbanist-ExtraBold", size: 32))
+                .foregroundStyle(Color.onBoardingPrimary)
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
                 .padding(.bottom, 24)
@@ -386,42 +367,38 @@ struct OnboardingStep2View: View {
             Image(activityLevels[currentIndex].imageName)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 200)
+                .frame(height: 250)
                 .frame(maxWidth: .infinity)
                 .animation(.easeInOut(duration: 0.25), value: currentIndex)
 
             VStack(spacing: 4) {
                 Text(activityLevels[currentIndex].name)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(Color(red: 0.078, green: 0.173, blue: 0.110))
+                    .font(.custom("Urbanist-SemiBold", size: 24))
+                    .foregroundStyle(Color.onBoardingPrimary)
                 Text(activityLevels[currentIndex].description)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color(red: 0.55, green: 0.55, blue: 0.55))
+                    .font(Font.custom("Urbanist-SemiBold", size: 16))
+                    .foregroundStyle(Color.onBoardingPrimary.opacity(0.5))
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 16)
             .padding(.bottom, 16)
 
-            VStack(spacing: 6) {
+            HStack() {
+                Image(systemName: "zzz")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.onBoardingPrimary.opacity(0.5))
                 Slider(value: $activityIndex, in: 0...4, step: 1)
-                    .tint(Color.brandGreenButton)
+                    .tint(Color.onBoardingTitle)
                     .onChange(of: activityIndex) { _, newValue in
                         vm.formActivity = activityLevels[Int(newValue)].level
                     }
-                    .padding(.horizontal, 20)
-
-                HStack {
-                    Text("Zzz")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color(red: 0.55, green: 0.55, blue: 0.55))
-                    Spacer()
-                    Image(systemName: "figure.run")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color(red: 0.55, green: 0.55, blue: 0.55))
-                }
-                .padding(.horizontal, 24)
+                    .padding(.horizontal, 4)
+                Image(systemName: "figure.run")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.onBoardingPrimary.opacity(0.5))
             }
             .padding(.bottom, 8)
+            .padding(.horizontal, 24)
 
             Spacer()
 
@@ -444,11 +421,11 @@ struct OnboardingStep3View: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Berapa sih")
-                    .font(.system(size: 38, weight: .bold))
-                    .foregroundStyle(Color.brandGreenLight)
+                    .font(.custom("Urbanist-ExtraBold", size: 64))
+                    .foregroundStyle(Color.onBoardingTitle)
                 Text("Budget makan\nharian kamu?")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(Color(red: 0.078, green: 0.173, blue: 0.110))
+                    .font(.custom("Urbanist-ExtraBold", size: 32))
+                    .foregroundStyle(Color.onBoardingPrimary)
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)
@@ -541,15 +518,25 @@ struct OnboardingPrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .background(Color.brandGreenButton)
-                .clipShape(Capsule())
+            HStack(spacing: 0) {
+                Text(title.replacingOccurrences(of: " →", with: ""))
+                    .font(.custom("Urbanist-Bold", size: 24))
+                Text(" →")
+                    .font(.custom("Urbanist-Bold", size: 24))
+                    .baselineOffset(-3)
+            }
+            .foregroundStyle(Color.onBoardingWhite)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.onBoardingTitle)
+            .clipShape(Capsule())
         }
         .padding(.horizontal, 20)
     }
+}
+
+// MARK: - Preview
+#Preview {
+    OnboardingView().environmentObject(UserProfileViewModel())
 }
 
