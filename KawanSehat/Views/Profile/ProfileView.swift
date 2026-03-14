@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - ProfileEditView
+// MARK: - ProfileView
 /// Allows user to update their health profile after onboarding
 struct ProfileView: View {
     @EnvironmentObject var vm: UserProfileViewModel
@@ -21,62 +21,66 @@ struct ProfileView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Data Tubuh") {
-                    HStack {
-                        Text("Berat")
-                        Spacer()
-                        TextField("kg", text: $weight)
-                            .multilineTextAlignment(.trailing)
-                            .keyboardType(.decimalPad)
-                            .frame(width: 80)
-                            .focused($focusedField, equals: .weight)
-                        Text("kg")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    HStack {
-                        Text("Tinggi")
-                        Spacer()
-                        TextField("cm", text: $height)
-                            .multilineTextAlignment(.trailing)
-                            .keyboardType(.decimalPad)
-                            .frame(width: 80)
-                            .focused($focusedField, equals: .height)
-                        Text("cm")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Picker("Aktivitas", selection: $activity) {
-                        ForEach(ActivityLevel.allCases, id: \.self) { level in
-                            Text(level.rawValue).tag(level)
-                        }
-                    }
-                }
+            ZStack {
+                Color.appBackground.ignoresSafeArea()
                 
-                Section("Budget Harian") {
-                    HStack {
-                        Text("Rp")
-                            .foregroundStyle(.secondary)
-                        TextField("50000", text: $budget)
-                            .keyboardType(.numberPad)
-                            .focused($focusedField, equals: .budget)
-                    }
-                }
-                
-                // Live BMI preview
-                if let w = Double(weight), let h = Double(height), h > 0 {
-                    Section("Kalkulasi") {
-                        let bmi = w / ((h/100) * (h/100))
+                Form {
+                    Section("Data Tubuh") {
                         HStack {
-                            Text("BMI")
+                            Text("Berat")
                             Spacer()
-                            Text(String(format: "%.1f", bmi))
-                                .bold()
-                                .foregroundColor(bmi < 18.5 ? .blue : bmi < 25 ? .green : bmi < 30 ? .orange : .red)
+                            TextField("kg", text: $weight)
+                                .multilineTextAlignment(.trailing)
+                                .keyboardType(.decimalPad)
+                                .frame(width: 80)
+                                .focused($focusedField, equals: .weight)
+                            Text("kg")
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        HStack {
+                            Text("Tinggi")
+                            Spacer()
+                            TextField("cm", text: $height)
+                                .multilineTextAlignment(.trailing)
+                                .keyboardType(.decimalPad)
+                                .frame(width: 80)
+                                .focused($focusedField, equals: .height)
+                            Text("cm")
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Picker("Aktivitas", selection: $activity) {
+                            ForEach(ActivityLevel.allCases, id: \.self) { level in
+                                Text(level.rawValue).tag(level)
+                            }
+                        }
+                    }
+                    
+                    Section("Budget Harian") {
+                        HStack {
+                            Text("Rp")
+                                .foregroundStyle(.secondary)
+                            TextField("50000", text: $budget)
+                                .keyboardType(.numberPad)
+                                .focused($focusedField, equals: .budget)
+                        }
+                    }
+                    
+                    if let w = Double(weight), let h = Double(height), h > 0 {
+                        Section("Kalkulasi") {
+                            let bmi = w / ((h/100) * (h/100))
+                            HStack {
+                                Text("BMI")
+                                Spacer()
+                                Text(String(format: "%.1f", bmi))
+                                    .bold()
+                                    .foregroundColor(bmi < 18.5 ? .blue : bmi < 25 ? .green : bmi < 30 ? .orange : .red)
+                            }
                         }
                     }
                 }
+                .scrollContentBackground(.hidden) // ← Wajib! Sembunyikan background default Form
             }
             .navigationTitle("Edit Profil")
             .navigationBarTitleDisplayMode(.inline)
@@ -92,8 +96,6 @@ struct ProfileView: View {
                     }
                     .bold()
                 }
-                
-                // Keyboard toolbar with Done button
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") {
@@ -102,7 +104,6 @@ struct ProfileView: View {
                 }
             }
             .onAppear {
-                // Pre-fill current profile values
                 weight = String(vm.profile.weightKg)
                 height = String(vm.profile.heightCm)
                 budget = String(Int(vm.profile.dailyBudgetIDR))
@@ -118,4 +119,10 @@ struct ProfileView: View {
         vm.profile.activityLevel = activity
         vm.updateProfile()
     }
+}
+
+// MARK: - Preview
+#Preview {
+    ProfileView()
+        .environmentObject(UserProfileViewModel())
 }

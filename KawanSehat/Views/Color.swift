@@ -29,4 +29,6 @@ extension Color {
     static let onBoardingTitle = Color(red: 0.15, green: 0.61, blue: 0.14)
     static let onBoardingPrimary = Color(red: 0.16, green: 0.23, blue: 0.17)
     static let onBoardingWhite = Color(red: 1.0, green: 0.98, blue: 0.96)
+    
+    static let mainTabTint = Color(red: 0.0, green: 0.62, blue: 0.65)
 }
