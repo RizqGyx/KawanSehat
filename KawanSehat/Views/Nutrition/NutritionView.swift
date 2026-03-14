@@ -1,21 +1,24 @@
 import SwiftUI
 
 // MARK: - NutritionView
-/// Feature 1: Food search, nutrition info, and healthy/cheap alternatives
+/// Feature 1: Food search, nutrition info, and healthy/cheap alternatives.
+/// Sub-components live in Views/Components/Nutrition/.
 struct NutritionView: View {
     @EnvironmentObject var nutritionVM: NutritionViewModel
     @EnvironmentObject var userProfileVM: UserProfileViewModel
+<<<<<<< Updated upstream
     
+=======
+    @StateObject private var geminiService = GeminiService.shared
+    @State private var showHistorySheet = false
+
+>>>>>>> Stashed changes
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Search Bar
-                SearchBar(text: $nutritionVM.searchQuery, onSubmit: {
-                    nutritionVM.performSearch()
-                })
-                .padding()
-                
+
                 if let selectedFood = nutritionVM.selectedFood {
+<<<<<<< Updated upstream
                     // Show selected food detail + suggestions
                     ScrollView {
                         VStack(spacing: 16) {
@@ -33,29 +36,47 @@ struct NutritionView: View {
                             .padding(.horizontal)
                             
                             // Nutrition result card
+=======
+                    // ── Detail state ───────────────────────────────────────
+                    detailNavBar(for: selectedFood)
+
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 20) {
+>>>>>>> Stashed changes
                             NutritionResultCard(
                                 food: selectedFood,
                                 budgetStatus: nutritionVM.budgetRemainingFormatted,
                                 fitsBudget: nutritionVM.fitsbudget(selectedFood),
-                                caloriePercentage: nutritionVM.caloriePercentage(for: selectedFood)
+                                caloriePercentage: nutritionVM.caloriePercentage(for: selectedFood),
+                                tdee: userProfileVM.profile.tdee
                             )
+<<<<<<< Updated upstream
                             .padding(.horizontal)
                             
                             // Suggestions section
                             if !nutritionVM.suggestions.isEmpty {
                                 SectionHeader(title: "Alternatif Lebih Sehat & Hemat", icon: "sparkles")
                                 
+=======
+                            .padding(.horizontal, 20)
+
+                            if let latestSuggestion = geminiService.suggestions.first,
+                               latestSuggestion.foodName == selectedFood.name {
+                                GeminiSuggestionCard(suggestion: latestSuggestion)
+                                    .padding(.horizontal, 20)
+                            }
+
+                            if !nutritionVM.suggestions.isEmpty {
+                                AlternativeHeaderSection()
+>>>>>>> Stashed changes
                                 VStack(spacing: 10) {
                                     ForEach(nutritionVM.suggestions) { suggestion in
                                         SuggestionCard(suggestion: suggestion) {
-                                            // Tap to select the alternative
-                                            withAnimation {
-                                                nutritionVM.selectFood(suggestion.food)
-                                            }
+                                            withAnimation { nutritionVM.selectFood(suggestion.food) }
                                         }
                                     }
                                 }
-                                .padding(.horizontal)
+                                .padding(.horizontal, 20)
                             } else {
                                 ContentUnavailableView(
                                     "Tidak ada alternatif",
@@ -63,12 +84,14 @@ struct NutritionView: View {
                                     description: Text("Ini sudah pilihan terbaik sesuai budgetmu!")
                                 )
                             }
-                            
-                            Spacer(minLength: 20)
+
+                            Spacer(minLength: 24)
                         }
-                        .padding(.top)
+                        .padding(.top, 4)
                     }
+
                 } else {
+<<<<<<< Updated upstream
                     // Show search results list
                     if nutritionVM.isSearching {
                         ProgressView("Mencari...")
@@ -95,8 +118,32 @@ struct NutritionView: View {
                 }
             }
             .navigationTitle("Kalkulator Nutrisi")
+=======
+                    // ── List state ─────────────────────────────────────────
+                    listNavBar
+
+                    HStack {
+                        Text("Kalkulator Nutrisi")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundStyle(Color.onBoardingPrimary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 14)
+
+                    NutritionSearchBar(text: $nutritionVM.searchQuery, onSubmit: {
+                        nutritionVM.performSearch()
+                    })
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+
+                    listContent
+                }
+            }
+            .background(Color(.systemBackground))
+            .navigationBarHidden(true)
+>>>>>>> Stashed changes
             .onAppear {
-                // Sync with latest profile (budget may have changed)
                 nutritionVM.updateProfile(userProfileVM.profile)
                 nutritionVM.performSearch()
             }
@@ -105,8 +152,8 @@ struct NutritionView: View {
             }
         }
     }
-}
 
+<<<<<<< Updated upstream
 // MARK: - Search Bar Component
 struct SearchBar: View {
     @Binding var text: String
@@ -145,145 +192,63 @@ struct FoodListRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 // Health score circle
+=======
+    // MARK: - Sub-views
+
+    /// Navigation bar for the list screen (logo + History button)
+    private var listNavBar: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image("Icon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
+
+            Text("KawanSehat")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(Color.onBoardingPrimary)
+
+            Spacer()
+
+            Button { showHistorySheet = true } label: {
+                Text("History")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.onBoardingPrimary)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 9)
+                    .background(Color(.systemGray6))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 8)
+    }
+
+    /// Navigation bar for the detail screen (back button + title + AI button)
+    @ViewBuilder
+    private func detailNavBar(for food: FoodItem) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                withAnimation { nutritionVM.clearSelection() }
+            } label: {
+>>>>>>> Stashed changes
                 ZStack {
                     Circle()
-                        .fill(healthColor.opacity(0.2))
-                        .frame(width: 40, height: 40)
-                    Text("\(food.healthScore)")
-                        .font(.subheadline.bold())
-                        .foregroundColor(healthColor)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(food.name)
-                        .font(.subheadline.bold())
-                        .foregroundColor(.primary)
-                    Text("\(Int(food.calories)) kal · \(food.category.rawValue)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(food.priceFormatted)
-                        .font(.subheadline.bold())
-                        .foregroundColor(fitsBudget ? .green : .orange)
-                    if !fitsBudget {
-                        Text("Melebihi budget")
-                            .font(.caption2)
-                            .foregroundColor(.orange)
-                    }
+                        .fill(Color(.systemGray6))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.onBoardingPrimary)
                 }
             }
-        }
-    }
-    
-    var healthColor: Color {
-        switch food.healthScore {
-        case 8...10: return .green
-        case 6...7:  return .blue
-        case 4...5:  return .orange
-        default:     return .red
-        }
-    }
-}
 
-// MARK: - Nutrition Result Card
-struct NutritionResultCard: View {
-    let food: FoodItem
-    let budgetStatus: String
-    let fitsBudget: Bool
-    let caloriePercentage: Double
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(food.name)
-                        .font(.title2.bold())
-                    Text(food.category.rawValue)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(food.priceFormatted)
-                        .font(.title3.bold())
-                        .foregroundColor(fitsBudget ? .green : .orange)
-                    Text(budgetStatus)
-                        .font(.caption)
-                        .foregroundColor(fitsBudget ? .secondary : .orange)
-                }
-            }
-            
-            Divider()
-            
-            // Calories with progress bar
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Kalori")
-                        .font(.subheadline)
-                    Spacer()
-                    Text("\(Int(food.calories)) kal")
-                        .font(.subheadline.bold())
-                        .foregroundColor(.orange)
-                    Text("(\(Int(caloriePercentage * 100))% dari kebutuhan harian)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ProgressView(value: caloriePercentage)
-                    .tint(.orange)
-            }
-            
-            // Macros grid
-            HStack(spacing: 0) {
-                MacroCell(label: "Protein", value: food.proteinG, unit: "g", color: .blue)
-                MacroCell(label: "Karbohidrat", value: food.carbsG, unit: "g", color: .orange)
-                MacroCell(label: "Lemak", value: food.fatG, unit: "g", color: .pink)
-                MacroCell(label: "Serat", value: food.fiberG, unit: "g", color: .green)
-            }
-            
-            // Health score
-            HStack {
-                Label(food.healthScoreLabel, systemImage: "heart.fill")
-                    .font(.subheadline)
-                    .foregroundColor(.green)
-                Spacer()
-                Text("Per \(Int(food.servingSizeG))g")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.08), radius: 8)
-    }
-}
+            Text("Kalkulator Nutrisi")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.onBoardingPrimary)
 
-// MARK: - Macro Cell
-struct MacroCell: View {
-    let label: String
-    let value: Double
-    let unit: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(String(format: "%.1f\(unit)", value))
-                .font(.headline)
-                .foregroundColor(color)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
+            Spacer()
 
+<<<<<<< Updated upstream
 // MARK: - Suggestion Card
 struct SuggestionCard: View {
     let suggestion: FoodSuggestion
@@ -336,3 +301,65 @@ struct SuggestionCard: View {
         }
     }
 }
+=======
+            Button {
+                Task {
+                    _ = await geminiService.getHealthSuggestion(
+                        for: food.name,
+                        userProfile: userProfileVM.profile
+                    )
+                }
+            } label: {
+                if geminiService.isLoading {
+                    ProgressView().frame(width: 20, height: 20)
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.onBoardingTitle)
+                }
+            }
+            .disabled(geminiService.isLoading)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
+    }
+
+    /// Search results list content
+    @ViewBuilder
+    private var listContent: some View {
+        if nutritionVM.isSearching {
+            ProgressView("Mencari...")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if nutritionVM.searchResults.isEmpty {
+            ContentUnavailableView(
+                "Tidak ditemukan",
+                systemImage: "magnifyingglass",
+                description: Text("Coba kata kunci lain seperti 'nasi', 'ayam', 'tempe'")
+            )
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(nutritionVM.searchResults) { food in
+                        FoodListRow(
+                            food: food,
+                            fitsBudget: nutritionVM.fitsbudget(food)
+                        ) {
+                            withAnimation { nutritionVM.selectFood(food) }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+#Preview {
+    NutritionView()
+        .environmentObject(NutritionViewModel(userProfile: UserProfile()))
+        .environmentObject(UserProfileViewModel())
+}
+>>>>>>> Stashed changes
