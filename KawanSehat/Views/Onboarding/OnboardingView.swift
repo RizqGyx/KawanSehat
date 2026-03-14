@@ -10,7 +10,7 @@ struct FieldError {
     var budget: String? = nil
 }
 
-func validateStep1(name: String, age: String, gender: Gender, weight: String, height: String) -> FieldError {
+func validateStep1(name: String, age: String, gender: Gender?, weight: String, height: String) -> FieldError {
     var errors = FieldError()
 
     if name.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -25,7 +25,7 @@ func validateStep1(name: String, age: String, gender: Gender, weight: String, he
         errors.age = "Usia harus berupa angka"
     }
 
-    if !(gender == .male || gender == .female) {
+    if gender == nil || !(gender == .male || gender == .female) {
         errors.gender = "Pilih gender"
     }
 
@@ -155,6 +155,16 @@ struct OnboardingStep1View: View {
                                 hasError: errors.name != nil
                             )
                         }
+                        .overlay(alignment: .trailingLastTextBaseline) {
+                            Text("\(vm.formName.count)/15")
+                                .font(.custom("Urbanist-Bold", size: 12))
+                                .foregroundStyle(
+                                    vm.formName.count >= 15
+                                    ? Color(red: 0.85, green: 0.2, blue: 0.2)
+                                    : Color.onBoardingPrimary.opacity(0.4)
+                                )
+                                .padding(.trailing, 10)
+                        }
 
                         // Usia & Gender
                         HStack(spacing: 12) {
@@ -221,7 +231,12 @@ struct OnboardingStep1View: View {
             .padding(.bottom, 32)
         }
         // Re-validasi live setelah user pernah tekan Lanjut
-        .onChange(of: vm.formName)   { if didAttempt { revalidate() } }
+        .onChange(of: vm.formName) {
+            if vm.formName.count > 15 {
+                vm.formName = String(vm.formName.prefix(15))
+            }
+            if didAttempt { revalidate() }
+        }
         .onChange(of: vm.formAge)    { if didAttempt { revalidate() } }
         .onChange(of: vm.formGender) { if didAttempt { revalidate() } }
         .onChange(of: vm.formWeight) { if didAttempt { revalidate() } }
@@ -278,7 +293,7 @@ struct InlineTextField: View {
             if let label = trailingLabel {
                 Text(label)
                     .font(.custom("Urbanist-Regular", size: 14))
-                    .foregroundStyle(Color(red: 0.65, green: 0.65, blue: 0.65))
+                    .foregroundStyle(Color.onBoardingPrimary.opacity(0.5))
             }
         }
         .padding(.horizontal, 14)
@@ -311,21 +326,18 @@ struct InlineGenderField: View {
                 let isSelectedFemale = vm.formGender == .female
                 let isUnselected = !(isSelectedMale || isSelectedFemale)
 
-                Text(isUnselected ? "Gender" : vm.formGender.rawValue)
-                    .font(.system(size: 15))
+                Text(isUnselected ? "Gender" : vm.formGender?.rawValue ?? "Gender")
+                    .font(.custom("Urbanist-SemiBold", size: 16))
                     .foregroundStyle(
                         isUnselected
-                        ? Color(red: 0.6, green: 0.6, blue: 0.6)
-                        : Color(red: 0.4, green: 0.4, blue: 0.4)
+                        ? Color.onBoardingPrimary.opacity(0.3)
+                        : Color.onBoardingPrimary.opacity(1.0)
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            if vm.formGender == .male || vm.formGender == .female {
-                Text(vm.formGender == .male ? "L" : "P")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color(red: 0.65, green: 0.65, blue: 0.65))
-            }
+            Text("L / P")
+                .font(.custom("Urbanist-Regular", size: 14))
+                .foregroundStyle(Color.onBoardingPrimary.opacity(0.5))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 16)
@@ -434,12 +446,12 @@ struct OnboardingStep3View: View {
             ValidatedField(errorMessage: errors.budget) {
                 HStack {
                     Text("Rp")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Color(red: 0.4, green: 0.4, blue: 0.4))
+                        .font(.custom("Urbanist-SemiBold", size: 16))
+                        .foregroundStyle(Color.onBoardingPrimary.opacity(0.5))
                     TextField("Budget Harian", text: $vm.formBudget)
-                        .font(.system(size: 16))
+                        .font(.custom("Urbanist-SemiBold", size: 16))
+                        .foregroundStyle(Color.onBoardingPrimary)
                         .keyboardType(.numberPad)
-                        .foregroundStyle(Color(red: 0.4, green: 0.4, blue: 0.4))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 18)
@@ -486,17 +498,15 @@ struct OnboardingStep4View: View {
             Spacer().frame(height: 32)
 
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 0) {
-                    Text("Yay, ")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundStyle(Color.brandGreenLight)
-                    Text("\(vm.formName)!")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundStyle(Color.brandGreenLight)
-                }
+                Text("Yay, \(vm.formName)!")
+                    .font(.custom("Urbanist-ExtraBold", size: 64))
+                    .foregroundStyle(Color.onBoardingTitle)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .truncationMode(.tail)
                 Text("Perjalanan sehatmu\ndimulai sekarang!")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color(red: 0.078, green: 0.173, blue: 0.110))
+                    .font(.custom("Urbanist-ExtraBold", size: 32))
+                    .foregroundStyle(Color.onBoardingPrimary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 24)

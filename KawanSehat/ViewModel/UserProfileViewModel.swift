@@ -15,12 +15,12 @@ class UserProfileViewModel: ObservableObject {
     
     // MARK: - Form state (used during onboarding)
     @Published var formName: String = ""
-    @Published var formAge: String = "25"
-    @Published var formGender: Gender = .male
-    @Published var formWeight: String = "65"
-    @Published var formHeight: String = "165"
+    @Published var formAge: String = ""
+    @Published var formGender: Gender? = nil
+    @Published var formWeight: String = ""
+    @Published var formHeight: String = ""
     @Published var formActivity: ActivityLevel = .moderate
-    @Published var formBudget: String = "50000"
+    @Published var formBudget: String = ""
     
     @Published var showValidationError: Bool = false
     @Published var validationMessage: String = ""
@@ -55,7 +55,7 @@ class UserProfileViewModel: ObservableObject {
         
         profile.name = formName.trimmingCharacters(in: .whitespaces)
         profile.age = Int(formAge) ?? 25
-        profile.gender = formGender
+        profile.gender = formGender ?? .male
         profile.weightKg = Double(formWeight) ?? 65
         profile.heightCm = Double(formHeight) ?? 165
         profile.activityLevel = formActivity
