@@ -41,4 +41,6 @@ extension Color {
     
     static let error = Color(UIColor(rgb: 0xFFE86D65))
     static let errorLight = Color(UIColor(rgb: 0xFFFADBD8))
+    
+    static let mainTabTint = Color(red: 0.0, green: 0.62, blue: 0.65)
 }

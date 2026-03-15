@@ -18,8 +18,7 @@ struct SplashScreenView: View {
     var body: some View {
         ZStack {
             // Warm off-white background matching the image
-            Color(red: 1.0, green: 0.98, blue: 0.96)
-                .ignoresSafeArea()
+            Color.appBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
                 Spacer()

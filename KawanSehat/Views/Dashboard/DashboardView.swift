@@ -67,8 +67,23 @@ struct DashboardView: View {
                         
                         Spacer(minLength: 20)
                     }
+                    
+                    Spacer(minLength: 20)
                 }
-                .navigationBarTitleDisplayMode(.large)
+                .padding(.top)
+            }
+            .navigationTitle("Kawan Sehat")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ProfileView()
+                    } label: {
+                        Image(systemName: "person.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                    }
+                }
             }
         }
     }
