@@ -22,7 +22,7 @@ struct DashboardView: View {
                         }
                         .padding(.horizontal)
                         // Greeting with modern design
-                        GreetingBanner(userVM: userProfileVM)
+                        GreetingBanner()
                         
                         // BMI + Calorie Card - Modern style
                         //                        HealthSummaryCard(vm: userProfileVM)
@@ -72,25 +72,13 @@ struct DashboardView: View {
                 }
                 .padding(.top)
             }
-            .navigationTitle("Kawan Sehat")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        ProfileView()
-                    } label: {
-                        Image(systemName: "person.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
-                    }
-                }
-            }
         }
     }
 }
 
 // MARK - PREVIEW
 #Preview {
-    DashboardView()
+    GreetingBanner()
         .environmentObject(UserProfileViewModel())
 }

@@ -8,16 +8,11 @@ struct ProfileView: View {
 
     enum Field { case weight, height, budget }
 
-    @State private var weight: String = ""
-    @State private var height: String = ""
-    @State private var budget: String = ""
-    @State private var activity: ActivityLevel = .moderate
-
     // MARK: - Computed Properties
 
     private var bmi: Double? {
-        guard let w = Double(weight), let h = Double(height), h > 0 else { return nil }
-        return w / pow(h / 100, 2)
+        guard vm.profile.heightCm > 0 else { return nil }
+        return vm.profile.weightKg / pow(vm.profile.heightCm / 100, 2)
     }
 
     private var bmiCategory: String {
@@ -38,15 +33,16 @@ struct ProfileView: View {
 
     /// Rentang berat ideal berdasarkan BMI 18.5–24.9
     private var idealWeight: (min: Double, max: Double)? {
-        guard let h = Double(height), h > 0 else { return nil }
-        let hm = h / 100
+        guard vm.profile.heightCm > 0 else { return nil }
+        let hm = vm.profile.heightCm / 100
         return (min: 18.5 * hm * hm, max: 24.9 * hm * hm)
     }
 
     private var weightStatus: (label: String, color: Color) {
-        guard let w = Double(weight), let ideal = idealWeight else {
+        guard let ideal = idealWeight else {
             return ("–", Color.textMuted)
         }
+        let w = vm.profile.weightKg
         if w < ideal.min            { return ("Kurang",        Color(red: 0.2, green: 0.6, blue: 0.9)) }
         else if w <= ideal.max      { return ("Ideal",         Color.onBoardingTitle) }
         else if w <= ideal.max + 5  { return ("Sedikit Lebih", Color(red: 1.0, green: 0.5, blue: 0.15)) }
@@ -88,37 +84,9 @@ struct ProfileView: View {
                 }
             }
             .ignoresSafeArea(edges: .top)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "arrowshape.backward.fill")
-                            .font(.custom("Urbanist-Bold", size: 16))
-                            .foregroundStyle(Color.mainTabTint)
-                    }
-                    .buttonStyle(.plain)
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focusedField = nil }
-                        .foregroundStyle(Color.textDark)
-                }
-            }
             .toolbarColorScheme(.light, for: .navigationBar)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Edit Profil")
-                        .font(.custom("Urbanist-Bold", size: 20))
-                        .foregroundStyle(Color.mainTabTint)
-                }
-            }
-            .onAppear {
-                weight   = String(vm.profile.weightKg)
-                height   = String(vm.profile.heightCm)
-                budget   = String(Int(vm.profile.dailyBudgetIDR))
-                activity = vm.profile.activityLevel
-            }
         }
     }
 
@@ -155,7 +123,7 @@ struct ProfileView: View {
                     .font(.custom("Urbanist-Bold", size: 20))
                     .foregroundStyle(.white)
 
-                Text(activity.rawValue)
+                Text(vm.profile.activityLevel.rawValue)
                     .font(.custom("Urbanist-Bold", size: 12))
                     .foregroundStyle(Color.appBackground)
                     .padding(.horizontal, 14)
@@ -163,7 +131,7 @@ struct ProfileView: View {
                     .background(.white.opacity(0.2))
                     .clipShape(Capsule())
             }
-            .padding(.top, 120)
+            .padding(.top, 80)
             .padding(.bottom, 52)
 
             // Curved white overlap di bawah hero
@@ -182,25 +150,31 @@ struct ProfileView: View {
             Divider().overlay(Color.fieldBackground)
 
             fieldRow(label: "Berat Badan") {
-                TextField("65", text: $weight)
+                TextField("65", value: $vm.profile.weightKg, format: .number)
                     .multilineTextAlignment(.trailing)
                     .keyboardType(.decimalPad)
                     .focused($focusedField, equals: .weight)
                     .font(.custom("Urbanist-SemiBold", size: 15))
                     .foregroundStyle(Color.textDark)
                     .frame(width: 64)
+                    .onChange(of: vm.profile.weightKg) { _, _ in
+                        vm.updateProfile()
+                    }
                 Text("kg").unitStyle()
             }
             Divider().overlay(Color.fieldBackground).padding(.leading, 16)
 
             fieldRow(label: "Tinggi Badan") {
-                TextField("165", text: $height)
+                TextField("165", value: $vm.profile.heightCm, format: .number)
                     .multilineTextAlignment(.trailing)
                     .keyboardType(.decimalPad)
                     .focused($focusedField, equals: .height)
                     .font(.custom("Urbanist-SemiBold", size: 15))
                     .foregroundStyle(Color.textDark)
                     .frame(width: 64)
+                    .onChange(of: vm.profile.heightCm) { _, _ in
+                        vm.updateProfile()
+                    }
                 Text("cm").unitStyle()
             }
             Divider().overlay(Color.fieldBackground).padding(.leading, 16)
@@ -208,11 +182,14 @@ struct ProfileView: View {
             fieldRow(label: "Aktivitas") {
                 Menu {
                     ForEach(ActivityLevel.allCases, id: \.self) { level in
-                        Button(level.rawValue) { activity = level }
+                        Button(level.rawValue) {
+                            vm.profile.activityLevel = level
+                            vm.updateProfile()
+                        }
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(activity.rawValue)
+                        Text(vm.profile.activityLevel.rawValue)
                             .font(.custom("Urbanist-SemiBold", size: 12))
                             .foregroundStyle(Color.textDark)
                         Image(systemName: "chevron.up.chevron.down")
@@ -234,7 +211,8 @@ struct ProfileView: View {
             cardHeaderNoEdit(icon: "scalemass", title: "Berat Badan Ideal")
             Divider().overlay(Color.fieldBackground)
 
-            if let ideal = idealWeight, let w = Double(weight) {
+            if let ideal = idealWeight {
+                let w = vm.profile.weightKg
                 VStack(spacing: 0) {
                     // Rentang + status
                     HStack {
@@ -347,11 +325,14 @@ struct ProfileView: View {
                 Text("Rp")
                     .font(.custom("Urbanist-Medium", size: 14))
                     .foregroundStyle(Color.textMuted)
-                TextField("50000", text: $budget)
+                TextField("50000", value: $vm.profile.dailyBudgetIDR, format: .number)
                     .keyboardType(.numberPad)
                     .focused($focusedField, equals: .budget)
                     .font(.custom("Urbanist-Bold", size: 24))
                     .foregroundStyle(Color.textDark)
+                    .onChange(of: vm.profile.dailyBudgetIDR) { _, _ in
+                        vm.updateProfile()
+                    }
                 Spacer()
                 Text("/ hari")
                     .font(.custom("Urbanist-Medium", size: 12))
@@ -510,15 +491,6 @@ struct ProfileView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
-    }
-
-    // MARK: - Save
-    private func saveChanges() {
-        if let w = Double(weight) { vm.profile.weightKg = w }
-        if let h = Double(height) { vm.profile.heightCm = h }
-        if let b = Double(budget)  { vm.profile.dailyBudgetIDR = b }
-        vm.profile.activityLevel = activity
-        vm.updateProfile()
     }
 }
 

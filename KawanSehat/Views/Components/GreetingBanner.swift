@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct GreetingBanner: View {
-    let userVM: UserProfileViewModel
+    @EnvironmentObject var userVM: UserProfileViewModel 
 
     var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
@@ -49,7 +49,7 @@ struct GreetingBanner: View {
                             Text("BMI")
                                 .font(.custom("Urbanist-bold", size: 20))
                                 .foregroundStyle(Color.textDark)
-                            Text(String(format: "%.02f", userVM.profile.bmi))
+                            Text(String(format: "%.01f", userVM.profile.bmi))
                                 .font(.custom("Urbanist-bold", size: 32))
                                 .foregroundStyle(userVM.profile.bmiColor)
                             Text(userVM.profile.bmiCategory)
@@ -141,5 +141,6 @@ struct GreetingBanner: View {
 }
 
 #Preview {
-    GreetingBanner(userVM: UserProfileViewModel())
+    GreetingBanner()
+        .environmentObject(UserProfileViewModel())
 }
