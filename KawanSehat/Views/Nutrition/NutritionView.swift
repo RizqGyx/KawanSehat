@@ -38,7 +38,10 @@ struct NutritionView: View {
                                 AlternativeHeaderSection()
                                 VStack(spacing: 10) {
                                     ForEach(nutritionVM.suggestions) { suggestion in
-                                        SuggestionCard(suggestion: suggestion) {
+                                        SuggestionCard(
+                                            suggestion: suggestion,
+                                            budgetPerMeal: userProfileVM.profile.budgetPerMealIDR
+                                        ) {
                                             withAnimation { nutritionVM.selectFood(suggestion.food) }
                                         }
                                     }
