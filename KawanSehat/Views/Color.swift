@@ -25,10 +25,22 @@ extension Color {
     static let brandGreenPrimary = Color(red: 0.714, green: 0.882, blue: 0.612)
     static let brandGreenDark = Color(red: 0.49, green: 0.776, blue: 0.388)
     static let brandGreenButton = Color(red: 0.306, green: 0.6, blue: 0.22)
+    
+    static let brandSecondaryPale = Color(UIColor(rgb: 0xE6FBFA))
+    static let brandSecondaryLight = Color(UIColor(rgb: 0xCCF4F7))
+    static let brandSecondary = Color(UIColor(rgb: 0x9DEBED))
+    static let brandSecondaryDark = Color(UIColor(rgb: 0x48CBD2))
+    static let brandSecondaryDarker = Color(UIColor(rgb: 0x009EA6))
+    
+    static let brandAccentLight = Color(UIColor(rgb: 0xFFFADDAD))
+    static let brandAccent = Color(UIColor(rgb: 0xFFF2B65F))
 
     static let onBoardingTitle = Color(red: 0.15, green: 0.61, blue: 0.14)
     static let onBoardingPrimary = Color(red: 0.16, green: 0.23, blue: 0.17)
     static let onBoardingWhite = Color(red: 1.0, green: 0.98, blue: 0.96)
+    
+    static let error = Color(UIColor(rgb: 0xFFE86D65))
+    static let errorLight = Color(UIColor(rgb: 0xFFFADBD8))
     
     static let mainTabTint = Color(red: 0.0, green: 0.62, blue: 0.65)
 }

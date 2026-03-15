@@ -1,5 +1,5 @@
 import Foundation
-
+import SwiftUI
 // MARK: - Activity Level Enum
 enum ActivityLevel: String, CaseIterable, Codable {
     case sedentary     = "Sedentary"         // Little to no exercise
@@ -63,12 +63,12 @@ struct UserProfile: Codable {
         }
     }
     
-    var bmiColor: String {
+    var bmiColor: Color {
         switch bmi {
-        case ..<18.5: return "blue"
-        case 18.5..<25: return "green"
-        case 25..<30: return "orange"
-        default: return "red"
+        case ..<18.5: return Color(UIColor(rgb: 0xff009EA6))
+        case 18.5..<25: return Color(UIColor(rgb: 0xff34C759))
+        case 25..<30: return Color(UIColor(rgb: 0xFFFF8D28))
+        default: return Color(UIColor(rgb: 0xFFE86D65))
         }
     }
     
@@ -92,7 +92,7 @@ struct UserProfile: Codable {
     
     /// Formatted daily calorie needs
     var dailyCaloriesFormatted: String {
-        return String(format: "%.0f kal", tdee)
+        return String(format: "%.0f", tdee)
     }
     
     /// Calories per meal (assuming 3 meals a day)
