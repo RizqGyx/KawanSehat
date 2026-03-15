@@ -6,7 +6,23 @@ import SwiftUI
 struct FoodListRow: View {
     let food: FoodItem
     let fitsBudget: Bool
+    let budgetPerMeal: Double   // userProfile.budgetPerMealIDR — untuk hitung selisih nyata
     let onTap: () -> Void
+
+    /// Selisih harga vs budget per makan (positif = hemat, negatif = boros)
+    private var budgetDiff: Double {
+        budgetPerMeal - food.priceIDR
+    }
+
+    /// Label selisih yang diformat: "Hemat Rp 5.000" atau "Boros Rp 5.000"
+    private var budgetDiffFormatted: String {
+        let amount = Int(abs(budgetDiff))
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "."
+        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
+        return "Rp \(formatted)"
+    }
 
     var body: some View {
         Button(action: onTap) {
@@ -36,14 +52,14 @@ struct FoodListRow: View {
                         .foregroundStyle(Color.onBoardingPrimary)
 
                     if fitsBudget {
-                        Text("Hemat Rp 5.000")
+                        Text("Hemat \(budgetDiffFormatted)")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(Color(red: 0.12, green: 0.55, blue: 0.22))
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Color(red: 0.86, green: 0.97, blue: 0.88))
                             .clipShape(Capsule())
                     } else {
-                        Text("Boros Rp 5.000")
+                        Text("Boros \(budgetDiffFormatted)")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(Color(red: 0.78, green: 0.18, blue: 0.18))
                             .padding(.horizontal, 8).padding(.vertical, 3)
@@ -59,7 +75,6 @@ struct FoodListRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            // ── Card container (matches detail screen style) ──
             .background(Color(.systemGray6))
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }

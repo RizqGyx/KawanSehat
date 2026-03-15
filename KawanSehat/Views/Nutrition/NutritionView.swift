@@ -184,7 +184,8 @@ struct NutritionView: View {
                     ForEach(nutritionVM.searchResults) { food in
                         FoodListRow(
                             food: food,
-                            fitsBudget: nutritionVM.fitsbudget(food)
+                            fitsBudget: nutritionVM.fitsbudget(food),
+                            budgetPerMeal: userProfileVM.profile.budgetPerMealIDR
                         ) {
                             withAnimation { nutritionVM.selectFood(food) }
                         }
@@ -202,8 +203,4 @@ struct NutritionView: View {
     NutritionView()
         .environmentObject(NutritionViewModel(userProfile: UserProfile()))
         .environmentObject(UserProfileViewModel())
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> de1bca1a48f5b78133077f1a1eafddafd6bcc1c3
