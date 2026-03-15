@@ -31,14 +31,20 @@ class ReminderViewModel: ObservableObject {
     func toggleReminder(at index: Int) {
         guard index < reminders.count else { return }
         
-        // Check notification permission before enabling
+        // If trying to enable and not authorized, request permission first
         if !reminders[index].isEnabled && !isNotificationAuthorized {
             showPermissionAlert = true
             return
         }
         
         reminders[index].isEnabled.toggle()
-        saveAndSync()
+        
+        // If enabled, also sync with notification service
+        if reminders[index].isEnabled {
+            saveAndSync()
+        } else {
+            saveAndSync()
+        }
     }
     
     // MARK: - Update reminder time

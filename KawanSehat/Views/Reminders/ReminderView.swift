@@ -5,6 +5,7 @@ import SwiftUI
 struct ReminderView: View {
     @EnvironmentObject var reminderVM: ReminderViewModel
     @EnvironmentObject var notificationService: NotificationService
+    @State private var showMealHistorySheet = false
     
     var body: some View {
         NavigationStack {
@@ -61,17 +62,37 @@ struct ReminderView: View {
                 }
             }
             .navigationTitle("Pengingat")
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showMealHistorySheet = true
+                    } label: {
+                        Label("Riwayat", systemImage: "fork.knife")
+                    }
+                }
+            }
             .alert("Izinkan Notifikasi", isPresented: $reminderVM.showPermissionAlert) {
                 Button("Izinkan") {
-                    Task { await reminderVM.requestPermission() }
+                    Task {
+                        await reminderVM.requestPermission()
+                        // Allow a moment for permission to be processed
+                        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                        // Try to enable the reminder again
+                        reminderVM.toggleReminder(at: 0)
+                    }
                 }
                 Button("Nanti", role: .cancel) {}
             } message: {
                 Text("HealthBudget butuh izin notifikasi untuk mengirim pengingat kesehatanmu.")
             }
-            .task {
-                await notificationService.checkAuthorizationStatus()
-                reminderVM.isNotificationAuthorized = notificationService.isAuthorized
+            .onAppear {
+                Task {
+                    await notificationService.requestPermission()
+                    reminderVM.isNotificationAuthorized = notificationService.isAuthorized
+                }
+            }
+            .sheet(isPresented: $showMealHistorySheet) {
+                MealReminderHistorySheet()
             }
         }
     }
@@ -162,7 +183,7 @@ struct ReminderRow: View {
     let onToggle: () -> Void
     let onTimeChange: (Date) -> Void
     let selectedTime: Date
-    @State private var showTimePicker = false
+    @State private var showTimePickerSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -193,14 +214,12 @@ struct ReminderRow: View {
                 .labelsHidden()
             }
             
-            // Expandable time picker (shows when enabled)
+            // Show time when enabled
             if reminder.isEnabled {
                 Divider().padding(.vertical, 8)
                 
                 Button {
-                    withAnimation(.spring()) {
-                        showTimePicker.toggle()
-                    }
+                    showTimePickerSheet = true
                 } label: {
                     HStack {
                         Label("Jam pengingat", systemImage: "clock")
@@ -210,27 +229,69 @@ struct ReminderRow: View {
                         Text(reminder.timeFormatted)
                             .foregroundColor(.green)
                             .font(.subheadline)
-                        Image(systemName: showTimePicker ? "chevron.up" : "chevron.down")
+                        Image(systemName: "chevron.right")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
-                
-                if showTimePicker {
-                    DatePicker(
-                        "Pilih waktu",
-                        selection: Binding(
-                            get: { selectedTime },
-                            set: { onTimeChange($0) }
-                        ),
-                        displayedComponents: .hourAndMinute
-                    )
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
-                }
             }
         }
         .padding(.vertical, 4)
+        .sheet(isPresented: $showTimePickerSheet) {
+            TimePickerSheet(
+                selectedTime: selectedTime,
+                onTimeChange: onTimeChange
+            )
+        }
+    }
+}
+
+// MARK: - Time Picker Sheet
+struct TimePickerSheet: View {
+    @Environment(\.dismiss) var dismiss
+    let selectedTime: Date
+    let onTimeChange: (Date) -> Void
+    @State private var tempTime: Date
+    
+    init(selectedTime: Date, onTimeChange: @escaping (Date) -> Void) {
+        self.selectedTime = selectedTime
+        self.onTimeChange = onTimeChange
+        _tempTime = State(initialValue: selectedTime)
+    }
+    
+    var body: some View {
+        NavigationStack {
+            VStack {
+                DatePicker(
+                    "Pilih waktu",
+                    selection: $tempTime,
+                    displayedComponents: .hourAndMinute
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                
+                Spacer()
+                
+                Button {
+                    onTimeChange(tempTime)
+                    dismiss()
+                } label: {
+                    Text("Simpan")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+            }
+            .padding()
+            .navigationTitle("Atur Waktu Pengingat")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Batal") { dismiss() }
+                }
+            }
+        }
     }
 }

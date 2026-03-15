@@ -95,8 +95,27 @@ struct UserProfile: Codable {
         return String(format: "%.0f kal", tdee)
     }
     
+    /// Calories per meal (assuming 3 meals a day)
+    var caloriesPerMealIntake: Double {
+        return tdee / 3.0
+    }
+    
+    /// Formatted calories per meal
+    var caloriesPerMealFormatted: String {
+        return String(format: "%.0f kal", caloriesPerMealIntake)
+    }
+    
     /// Budget per meal (assuming 3 meals a day)
     var budgetPerMealIDR: Double {
         return dailyBudgetIDR / 3.0
+    }
+    
+    /// Formatted budget per meal
+    var budgetPerMealFormatted: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "IDR"
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: budgetPerMealIDR)) ?? "Rp \(Int(budgetPerMealIDR))"
     }
 }

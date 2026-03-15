@@ -6,19 +6,15 @@ import SwiftUI
 struct NutritionView: View {
     @EnvironmentObject var nutritionVM: NutritionViewModel
     @EnvironmentObject var userProfileVM: UserProfileViewModel
-<<<<<<< Updated upstream
-    
-=======
+
     @StateObject private var geminiService = GeminiService.shared
     @State private var showHistorySheet = false
 
->>>>>>> Stashed changes
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
 
                 if let selectedFood = nutritionVM.selectedFood {
-<<<<<<< Updated upstream
                     // Show selected food detail + suggestions
                     ScrollView {
                         VStack(spacing: 16) {
@@ -29,20 +25,32 @@ struct NutritionView: View {
                                 } label: {
                                     Label("Kembali ke pencarian", systemImage: "arrow.left")
                                         .font(.subheadline)
-                                        .foregroundColor(.green)
+                                        .foregroundColor(.blue)
                                 }
                                 Spacer()
+                                
+                                // AI Suggestion button
+                                Button {
+                                    Task {
+                                        _ = await geminiService.getHealthSuggestion(
+                                            for: selectedFood.name,
+                                            userProfile: userProfileVM.profile
+                                        )
+                                    }
+                                } label: {
+                                    if geminiService.isLoading {
+                                        ProgressView()
+                                            .frame(height: 16)
+                                    } else {
+                                        Label("AI Saran", systemImage: "sparkles")
+                                    }
+                                }
+                                .font(.caption)
+                                .disabled(geminiService.isLoading)
                             }
                             .padding(.horizontal)
                             
                             // Nutrition result card
-=======
-                    // ── Detail state ───────────────────────────────────────
-                    detailNavBar(for: selectedFood)
-
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 20) {
->>>>>>> Stashed changes
                             NutritionResultCard(
                                 food: selectedFood,
                                 budgetStatus: nutritionVM.budgetRemainingFormatted,
@@ -50,25 +58,19 @@ struct NutritionView: View {
                                 caloriePercentage: nutritionVM.caloriePercentage(for: selectedFood),
                                 tdee: userProfileVM.profile.tdee
                             )
-<<<<<<< Updated upstream
                             .padding(.horizontal)
                             
-                            // Suggestions section
-                            if !nutritionVM.suggestions.isEmpty {
-                                SectionHeader(title: "Alternatif Lebih Sehat & Hemat", icon: "sparkles")
-                                
-=======
-                            .padding(.horizontal, 20)
-
+                            // Gemini suggestion section (if available)
                             if let latestSuggestion = geminiService.suggestions.first,
                                latestSuggestion.foodName == selectedFood.name {
                                 GeminiSuggestionCard(suggestion: latestSuggestion)
-                                    .padding(.horizontal, 20)
+                                    .padding(.horizontal)
                             }
-
+                            
+                            // Alternative suggestions section
                             if !nutritionVM.suggestions.isEmpty {
                                 AlternativeHeaderSection()
->>>>>>> Stashed changes
+                                
                                 VStack(spacing: 10) {
                                     ForEach(nutritionVM.suggestions) { suggestion in
                                         SuggestionCard(suggestion: suggestion) {
@@ -91,7 +93,6 @@ struct NutritionView: View {
                     }
 
                 } else {
-<<<<<<< Updated upstream
                     // Show search results list
                     if nutritionVM.isSearching {
                         ProgressView("Mencari...")
@@ -118,42 +119,30 @@ struct NutritionView: View {
                 }
             }
             .navigationTitle("Kalkulator Nutrisi")
-=======
-                    // ── List state ─────────────────────────────────────────
-                    listNavBar
 
-                    HStack {
-                        Text("Kalkulator Nutrisi")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundStyle(Color.onBoardingPrimary)
-                        Spacer()
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showHistorySheet = true
+                    } label: {
+                        Label("History", systemImage: "deskclock")
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 14)
-
-                    NutritionSearchBar(text: $nutritionVM.searchQuery, onSubmit: {
-                        nutritionVM.performSearch()
-                    })
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
-
-                    listContent
                 }
             }
-            .background(Color(.systemBackground))
-            .navigationBarHidden(true)
->>>>>>> Stashed changes
             .onAppear {
                 nutritionVM.updateProfile(userProfileVM.profile)
                 nutritionVM.performSearch()
+                geminiService.loadHistory()
             }
             .onChange(of: nutritionVM.searchQuery) { _, _ in
                 nutritionVM.performSearch()
             }
+            .sheet(isPresented: $showHistorySheet) {
+                GeminiHistorySheet(geminiService: geminiService)
+            }
         }
     }
 
-<<<<<<< Updated upstream
 // MARK: - Search Bar Component
 struct SearchBar: View {
     @Binding var text: String
@@ -192,7 +181,6 @@ struct FoodListRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 // Health score circle
-=======
     // MARK: - Sub-views
 
     /// Navigation bar for the list screen (logo + History button)
@@ -231,7 +219,6 @@ struct FoodListRow: View {
             Button {
                 withAnimation { nutritionVM.clearSelection() }
             } label: {
->>>>>>> Stashed changes
                 ZStack {
                     Circle()
                         .fill(Color(.systemGray6))
@@ -248,7 +235,6 @@ struct FoodListRow: View {
 
             Spacer()
 
-<<<<<<< Updated upstream
 // MARK: - Suggestion Card
 struct SuggestionCard: View {
     let suggestion: FoodSuggestion
@@ -301,56 +287,6 @@ struct SuggestionCard: View {
         }
     }
 }
-=======
-            Button {
-                Task {
-                    _ = await geminiService.getHealthSuggestion(
-                        for: food.name,
-                        userProfile: userProfileVM.profile
-                    )
-                }
-            } label: {
-                if geminiService.isLoading {
-                    ProgressView().frame(width: 20, height: 20)
-                } else {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.onBoardingTitle)
-                }
-            }
-            .disabled(geminiService.isLoading)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
-    }
-
-    /// Search results list content
-    @ViewBuilder
-    private var listContent: some View {
-        if nutritionVM.isSearching {
-            ProgressView("Mencari...")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if nutritionVM.searchResults.isEmpty {
-            ContentUnavailableView(
-                "Tidak ditemukan",
-                systemImage: "magnifyingglass",
-                description: Text("Coba kata kunci lain seperti 'nasi', 'ayam', 'tempe'")
-            )
-        } else {
-            ScrollView {
-                LazyVStack(spacing: 10) {
-                    ForEach(nutritionVM.searchResults) { food in
-                        FoodListRow(
-                            food: food,
-                            fitsBudget: nutritionVM.fitsbudget(food)
-                        ) {
-                            withAnimation { nutritionVM.selectFood(food) }
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
             }
         }
     }
@@ -362,4 +298,3 @@ struct SuggestionCard: View {
         .environmentObject(NutritionViewModel(userProfile: UserProfile()))
         .environmentObject(UserProfileViewModel())
 }
->>>>>>> Stashed changes
