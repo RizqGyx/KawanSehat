@@ -532,4 +532,3 @@ private extension Text {
     ProfileView()
         .environmentObject(UserProfileViewModel())
 }
-

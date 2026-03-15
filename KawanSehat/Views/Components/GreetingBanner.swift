@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct GreetingBanner: View {
-    @EnvironmentObject var userVM: UserProfileViewModel 
+    @EnvironmentObject var userVM: UserProfileViewModel
 
     var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
