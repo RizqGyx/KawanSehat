@@ -22,7 +22,7 @@ struct DashboardView: View {
                         }
                         .padding(.horizontal)
                         // Greeting with modern design
-                        GreetingBanner(userVM: userProfileVM)
+                        GreetingBanner()
                         
                         // BMI + Calorie Card - Modern style
                         //                        HealthSummaryCard(vm: userProfileVM)
@@ -79,6 +79,6 @@ struct DashboardView: View {
 
 // MARK - PREVIEW
 #Preview {
-    DashboardView()
+    GreetingBanner()
         .environmentObject(UserProfileViewModel())
 }

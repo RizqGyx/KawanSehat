@@ -12,9 +12,9 @@ import Foundation
 struct APISecrets {
     // Add your Gemini API keys here
     static let GEMINI_API_KEYS = [
-        "AIzaSyDS7N5E--v8DOV6EsnUVrzvK8vGODnGYh8",
-        "AIzaSyCRTXZuuAZVx1eyPtI9s2RvfYCFxO-NnCU",
-        "AIzaSyClhs8OgYTGXnj9qARchzrot_LOhEouh_k",
-        "AIzaSyDmzZIDSPLv-0iNPVHgrAy25kGYWv_k2VI",
+        "AIzaSyAFPBJkRSNX2Btcx8gdsKzT5lnAo1fcfLg",
+        "AIzaSyAOC9tg3QqdzWiS_dwvI-qLcW8zl5q68WA",
+        "AIzaSyAYV2goFTYyHDijnxnCXf2x82UxhYCfxJc",
+        "AIzaSyCHfizjVjvQGJp7n1DnFK2E87H6K5nqks0"
     ]
 }
