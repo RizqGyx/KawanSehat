@@ -17,7 +17,7 @@ Podfile.lock
 Carthage/Build
 
 # 🔐 SECURITY: API Keys and Secrets
-APISecrets.swift
+KawanSehat/Config/APISecrets.swift
 .env
 .env.local
 *.key

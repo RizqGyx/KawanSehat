@@ -202,4 +202,8 @@ struct NutritionView: View {
     NutritionView()
         .environmentObject(NutritionViewModel(userProfile: UserProfile()))
         .environmentObject(UserProfileViewModel())
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> de1bca1a48f5b78133077f1a1eafddafd6bcc1c3
