@@ -170,7 +170,7 @@ struct ProfileView: View {
             Color.appBackground
                 .frame(height: 20)
                 .clipShape(
-                    RoundedCorner(radius: 20, corners: [.topLeft, .topRight])
+                    ProfileRoundedCorner(radius: 20, corners: [.topLeft, .topRight])
                 )
         }
     }
@@ -534,7 +534,7 @@ private struct CardShell<Content: View>: View {
 }
 
 // MARK: - Rounded Corner Shape (for hero curve)
-private struct RoundedCorner: Shape {
+private struct ProfileRoundedCorner: Shape {
     var radius: CGFloat
     var corners: UIRectCorner
     func path(in rect: CGRect) -> Path {
@@ -560,3 +560,4 @@ private extension Text {
     ProfileView()
         .environmentObject(UserProfileViewModel())
 }
+
