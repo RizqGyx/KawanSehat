@@ -34,11 +34,24 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Pengingat", systemImage: "bell.fill")
                 }
+            
+            ProfileView()
+                .tabItem{
+                    Label("Profil", systemImage: "person.circle.fill")
+                }
+            
         }
-        .tint(.blue)
+        .tint(Color.mainTabTint)
         .onAppear {
             // Sync NutritionVM with current profile
             nutritionVM.updateProfile(userProfileVM.profile)
         }
     }
+}
+
+// MARK - PREVIEW
+#Preview {
+    MainTabView()
+        .environmentObject(UserProfileViewModel())
+        .environmentObject(NotificationService())
 }

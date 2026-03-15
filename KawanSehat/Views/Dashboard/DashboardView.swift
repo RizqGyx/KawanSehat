@@ -62,7 +62,7 @@ struct DashboardView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        ProfileEditView()
+                        ProfileView()
                     } label: {
                         Image(systemName: "person.circle.fill")
                             .font(.title2)
@@ -313,4 +313,10 @@ struct SectionHeader: View {
         .padding(.horizontal)
         .padding(.top, 8)
     }
+}
+
+// MARK - PREVIEW
+#Preview {
+    DashboardView()
+        .environmentObject(UserProfileViewModel())
 }

@@ -7,7 +7,6 @@ struct NutritionView: View {
     @EnvironmentObject var userProfileVM: UserProfileViewModel
     @StateObject private var geminiService = GeminiService.shared
     @State private var showHistorySheet = false
-    @State private var showAPIKeySheet = false
     
     var body: some View {
         NavigationStack {
@@ -129,17 +128,7 @@ struct NutritionView: View {
                     Button {
                         showHistorySheet = true
                     } label: {
-                        Label("History", systemImage: "deskclocks")
-                    }
-                    
-                    Menu {
-                        Button {
-                            showAPIKeySheet = true
-                        } label: {
-                            Label("Setup API Key", systemImage: "key.fill")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Label("History", systemImage: "deskclock")
                     }
                 }
             }
@@ -154,9 +143,6 @@ struct NutritionView: View {
             }
             .sheet(isPresented: $showHistorySheet) {
                 GeminiHistorySheet(geminiService: geminiService)
-            }
-            .sheet(isPresented: $showAPIKeySheet) {
-                APIKeySetupSheet(geminiService: geminiService)
             }
         }
     }
@@ -511,65 +497,9 @@ struct GeminiHistorySheet: View {
     }
 }
 
-// MARK: - API Key Setup Sheet
-struct APIKeySetupSheet: View {
-    @Environment(\.dismiss) var dismiss
-    @ObservedObject var geminiService: GeminiService
-    @State private var apiKey: String = ""
-    @State private var showSuccess = false
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Dapatkan API Key dari Google AI Studio")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        Link("https://aistudio.google.com/app/apikey",
-                             destination: URL(string: "https://aistudio.google.com/app/apikey")!)
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    }
-                } header: {
-                    Text("Gemini Flash 2.5 API Key")
-                }
-                
-                Section("API Key") {
-                    SecureField("Paste your API key here", text: $apiKey)
-                }
-                
-                Section {
-                    Button {
-                        geminiService.setAPIKey(apiKey)
-                        showSuccess = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                            dismiss()
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("Simpan API Key")
-                                .bold()
-                            Spacer()
-                        }
-                    }
-                    .disabled(apiKey.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
-            .navigationTitle("Setup API Key")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Batal") { dismiss() }
-                }
-            }
-            .alert("Berhasil!", isPresented: $showSuccess) {
-                Button("OK") { }
-            } message: {
-                Text("API Key berhasil disimpan. Kamu sekarang bisa menggunakan fitur AI Recommendation.")
-            }
-        }
-    }
+// MARK: - Preview
+#Preview {
+    NutritionView()
+        .environmentObject(NutritionViewModel(userProfile: UserProfile()))
+        .environmentObject(UserProfileViewModel())
 }
