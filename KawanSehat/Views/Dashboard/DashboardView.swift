@@ -72,19 +72,7 @@ struct DashboardView: View {
                 }
                 .padding(.top)
             }
-            .navigationTitle("Kawan Sehat")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        ProfileView()
-                    } label: {
-                        Image(systemName: "person.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
-                    }
-                }
-            }
         }
     }
 }
