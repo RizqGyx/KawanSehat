@@ -171,96 +171,59 @@ struct NutritionView: View {
         }
     }
     
-    // MARK: - Food List Row
-    struct FoodListRow: View {
-        let food: FoodItem
-        let fitsBudget: Bool
-        let onTap: () -> Void
-        
-        var body: some View {
-            Button(action: onTap) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(food.name)
-                            .font(.subheadline.bold())
-                            .foregroundColor(.primary)
-                        Text(food.macroSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(food.priceFormatted)
-                            .font(.subheadline.bold())
-                            .foregroundColor(fitsBudget ? .green : .red)
-                        Text("\(Int(food.calories)) kal")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-    
     // MARK: - Suggestion Card
-    struct SuggestionCard: View {
-        let suggestion: FoodSuggestion
-        let onTap: () -> Void
-        
-        var body: some View {
-            Button(action: onTap) {
-                HStack(spacing: 12) {
-                    // Green leaf icon for healthy alternative
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.green.opacity(0.15))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "leaf.fill")
-                            .foregroundColor(.green)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(suggestion.food.name)
-                            .font(.subheadline.bold())
-                            .foregroundColor(.primary)
-                        Text(suggestion.reason)
-                            .font(.caption)
-                            .foregroundColor(.green)
-                        Text(suggestion.food.macroSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(suggestion.food.priceFormatted)
-                            .font(.subheadline.bold())
-                            .foregroundColor(.green)
-                        if suggestion.savingsIDR > 0 {
-                            Text(suggestion.savingsFormatted)
-                                .font(.caption)
-                                .foregroundColor(.blue)
-                        }
-                        Text("\(Int(suggestion.food.calories)) kal")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.05), radius: 4)
-            }
-            .buttonStyle(.plain)
-        }
-    }
+//    struct SuggestionCard: View {
+//        let suggestion: FoodSuggestion
+//        let onTap: () -> Void
+//        
+//        var body: some View {
+//            Button(action: onTap) {
+//                HStack(spacing: 12) {
+//                    // Green leaf icon for healthy alternative
+//                    ZStack {
+//                        RoundedRectangle(cornerRadius: 8)
+//                            .fill(Color.green.opacity(0.15))
+//                            .frame(width: 44, height: 44)
+//                        Image(systemName: "leaf.fill")
+//                            .foregroundColor(.green)
+//                    }
+//                    
+//                    VStack(alignment: .leading, spacing: 4) {
+//                        Text(suggestion.food.name)
+//                            .font(.subheadline.bold())
+//                            .foregroundColor(.primary)
+//                        Text(suggestion.reason)
+//                            .font(.caption)
+//                            .foregroundColor(.green)
+//                        Text(suggestion.food.macroSummary)
+//                            .font(.caption)
+//                            .foregroundStyle(.secondary)
+//                    }
+//                    
+//                    Spacer()
+//                    
+//                    VStack(alignment: .trailing, spacing: 4) {
+//                        Text(suggestion.food.priceFormatted)
+//                            .font(.subheadline.bold())
+//                            .foregroundColor(.green)
+//                        if suggestion.savingsIDR > 0 {
+//                            Text(suggestion.savingsFormatted)
+//                                .font(.caption)
+//                                .foregroundColor(.blue)
+//                        }
+//                        Text("\(Int(suggestion.food.calories)) kal")
+//                            .font(.caption)
+//                            .foregroundStyle(.secondary)
+//                    }
+//                }
+//                .padding()
+//                .background(Color(.systemBackground))
+//                .clipShape(RoundedRectangle(cornerRadius: 12))
+//                .shadow(color: .black.opacity(0.05), radius: 4)
+//            }
+//            .buttonStyle(.plain)
+//        }
+//    }
 }
 
 // MARK: - Preview

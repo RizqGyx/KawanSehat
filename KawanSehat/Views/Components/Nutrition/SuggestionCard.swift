@@ -29,6 +29,7 @@ struct SuggestionCard: View {
                         .foregroundStyle(Color.onBoardingPrimary)
 
                     HStack(spacing: 8) {
+                        //TODO: Ganti placeholder
                         TagChip(text: "Lebih Sehat")
                         TagChip(text: "Serat Tinggi")
                     }
@@ -85,5 +86,34 @@ struct TagChip: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(Color.onBoardingPrimary.opacity(0.70))
         }
+        .background(
+            Color.fieldBackground
+        )
     }
+}
+
+#Preview {
+    SuggestionCard(
+        suggestion: FoodSuggestion(
+            food: FoodItem(
+                name: "Nasi Goreng",
+                nameEn: "Fried Rice",
+                category: .mainDish,
+                servingSizeG: 300,
+                priceIDR: 20000,
+                calories: 450,
+                proteinG: 12,
+                carbsG: 65,
+                fatG: 14,
+                fiberG: 2,
+                healthScore: 5,
+                tags: ["nasi", "goreng", "rice", "populer"]
+            ),
+            reason: "Enak",
+            savingsIDR: 20000.0
+        ),
+        onTap: {
+            print("Suggestion tapped")
+        }
+    )
 }
