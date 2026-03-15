@@ -534,17 +534,17 @@ private struct CardShell<Content: View>: View {
 }
 
 // MARK: - Rounded Corner Shape (for hero curve)
-private struct RoundedCorner: Shape {
-    var radius: CGFloat
-    var corners: UIRectCorner
-    func path(in rect: CGRect) -> Path {
-        Path(UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        ).cgPath)
-    }
-}
+//private struct RoundedCorner: Shape {
+//    var radius: CGFloat
+//    var corners: UIRectCorner
+//    func path(in rect: CGRect) -> Path {
+//        Path(UIBezierPath(
+//            roundedRect: rect,
+//            byRoundingCorners: corners,
+//            cornerRadii: CGSize(width: radius, height: radius)
+//        ).cgPath)
+//    }
+//}
 
 // MARK: - Text Modifier
 private extension Text {
