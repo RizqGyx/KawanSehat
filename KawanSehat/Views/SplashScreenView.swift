@@ -8,102 +8,100 @@
 import SwiftUI
 
 // MARK: - SplashScreenView
-/// Animated splash screen shown on app launch
+/// Splash screen shown on app launch matching design mockup
 struct SplashScreenView: View {
-    @State private var isAnimating = false
-    @State private var showProgress = false
+    @State private var logoScale: CGFloat = 0.8
+    @State private var logoOpacity: Double = 0
+    @State private var titleOpacity: Double = 1
+    @State private var subtitleOpacity: Double = 0.5
     
     var body: some View {
         ZStack {
-            // Gradient background
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.2, green: 0.5, blue: 0.3),  // Dark green
-                    Color(red: 0.4, green: 0.7, blue: 0.5)   // Light green
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // Warm off-white background matching the image
+            Color(red: 1.0, green: 0.98, blue: 0.96)
+                .ignoresSafeArea()
             
-            // Animated elements
-            VStack(spacing: 30) {
+            VStack(spacing: 0) {
                 Spacer()
                 
-                // Logo / App Icon with animation
-                VStack(spacing: 20) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(.white)
-                        .scaleEffect(isAnimating ? 1.0 : 0.8)
-                        .opacity(isAnimating ? 1.0 : 0.5)
-                    
-                    VStack(spacing: 8) {
-                        Text("KawanSehat")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        
-                        Text("Kesehatan Terintegrasi")
-                            .font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
-                }
-                .scaleEffect(isAnimating ? 1.0 : 0.9)
-                .opacity(isAnimating ? 1.0 : 0.0)
+                // Plus/Cross Logo
+                Image("Icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .scaleEffect(logoScale)
+                    .opacity(logoOpacity)
+                
+                Spacer()
+                    .frame(height: 32)
+                
+                // Main title "KawanSehat"
+                Text("KawanSehat")
+                    .font(.system(size: 36, weight: .bold, design: .default))
+                    .foregroundStyle(Color.textPrimary)
+                    .tracking(0.3)
+                    .opacity(1)
+                
+                Spacer()
+                    .frame(height: 6)
+                
+                // Subtitle "Kesehatan Terintegrasi"
+                Text("Kesehatan Terintegrasi")
+                    .font(.system(size: 16, weight: .bold, design: .default))
+                    .foregroundStyle(Color.textPrimary)
+                    .opacity(0.5)
                 
                 Spacer()
                 
-                // Bottom section with tagline and progress
-                VStack(spacing: 20) {
-                    VStack(spacing: 10) {
-                        Text("💚 Jaga Kesehatanmu dengan Cerdas")
-                            .font(.system(size: 14, weight: .semibold, design: .default))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                        
-                        Text("Kalkulasi nutrisi, budget, dan reminder cerdas dalam satu aplikasi")
-                            .font(.system(size: 12, weight: .regular, design: .default))
-                            .foregroundStyle(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, 30)
+                // Bottom section
+                VStack(spacing: 12) {
+                    // Main heading
+                    Text("Jaga Kesehatanmu dengan Cerdas")
+                        .font(.system(size: 14, weight: .bold, design: .default))
+                        .foregroundStyle(Color.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .opacity(1)
                     
-                    // Progress indicator
-                    if showProgress {
-                        VStack(spacing: 12) {
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.white.opacity(0.3))
-                                    .frame(height: 4)
-                                
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.white)
-                                    .frame(height: 4)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .scaleEffect(x: isAnimating ? 1.0 : 0.0, anchor: .leading)
-                            }
-                            .frame(height: 4)
-                            .padding(.horizontal, 40)
-                            
-                            Text("Memproses...")
-                                .font(.system(size: 12, weight: .medium, design: .default))
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                    }
+                    // Description text
+                    Text("Kalkulasi nutrisi, budget, dan reminder cerdas dalam satu aplikasi")
+                        .font(.system(size: 12, weight: .bold, design: .default))
+                        .foregroundStyle(Color.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                        .opacity(0.5)
+                    
+                    Spacer()
+                        .frame(height: 8)
+                    
+                    // Progress bar - fully filled
+                    Capsule()
+                        .fill(Color.textPrimary.opacity(0.8))
+                        .frame(height: 5)
+                        .opacity(subtitleOpacity)
+                    
+                    Spacer()
+                        .frame(height: 0)
+                    
+                    // Loading text
+                    Text("Memproses...")
+                        .font(.system(size: 12, weight: .bold, design: .default))
+                        .foregroundStyle(Color.textPrimary)
+                        .opacity(0.5)
                 }
-                .padding(.bottom, 50)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 60)
             }
-            .padding(.horizontal, 20)
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.5)) {
-                isAnimating = true
+            withAnimation(.easeOut(duration: 0.7)) {
+                logoScale = 1.0
+                logoOpacity = 1.0
             }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation(.easeInOut(duration: 1.0)) {
-                    showProgress = true
-                }
+            withAnimation(.easeOut(duration: 0.7).delay(0.2)) {
+                titleOpacity = 1.0
+            }
+            withAnimation(.easeOut(duration: 0.7).delay(0.4)) {
+                subtitleOpacity = 1.0
             }
         }
     }

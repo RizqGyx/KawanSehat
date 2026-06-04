@@ -65,7 +65,6 @@ class NotificationService: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = "KawanSehat"
         content.body = reminder.goalType.defaultMessage
-        content.sound = .default
         content.badge = NSNumber(value: 1)
         
         // Schedule for each selected day of week
@@ -119,7 +118,6 @@ class NotificationService: ObservableObject {
         content.body = motivationalMessages.randomElement()?.replacingOccurrences(
             of: "\(0)", with: "\(config.inactiveHoursThreshold)"
         ) ?? "Yuk kembali ke KawanSehat!"
-        content.sound = .default
         content.badge = NSNumber(value: 1)
         
         // Cancel previous smart reminder before adding a new one
@@ -219,7 +217,6 @@ class NotificationService: ObservableObject {
         
         // Use a default message while waiting for Gemini to generate recommendation
         content.body = "Waktunya \(mealType.rawValue.lowercased())! Buka app untuk rekomendasi makanan sehat dan terjangkau untuk kamu."
-        content.sound = .default
         content.badge = NSNumber(value: 1)
         
         // Add user info for custom actions
@@ -270,7 +267,6 @@ class NotificationService: ObservableObject {
         Kalori: \(recommendation.calorieInfo)
         Budget: \(recommendation.budgetInfo)
         """
-        content.sound = .default
         content.badge = NSNumber(value: 1)
         content.userInfo = [
             "mealType": mealType.rawValue,
