@@ -322,12 +322,6 @@ Contributions are welcome! If you have suggestions for new features, food items,
 
 ---
 
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
 ## Acknowledgements
 
 - [Google Gemini API](https://ai.google.dev/) — AI-powered health and food suggestions
