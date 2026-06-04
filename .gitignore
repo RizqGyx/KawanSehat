@@ -36,3 +36,7 @@ KawanSehat/Config/APISecrets.swift
 # Environment
 venv/
 env/
+
+## User settings
+xcuserdata/
+*.xcodeproj/xcuserdata/
